@@ -11,6 +11,11 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
+    "db:create-migration": "npm run migration:create --workspace @irruptive/database --",
+    "db:migrate": "npm run migration:up --workspace @irruptive/database",
+    "db:rollback": "npm run migration:down --workspace @irruptive/database",
+    "db:redo": "npm run migration:redo --workspace @irruptive/database",
+    "db:test:migrate": "npm run migration:test:up --workspace @irruptive/database",
     "dev": "npm run dev --workspace @irruptive/api",
     "dev:api": "npm run dev --workspace @irruptive/api",
     "dev:web": "npm run dev --workspace @irruptive/web",
