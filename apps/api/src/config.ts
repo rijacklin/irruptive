@@ -8,8 +8,22 @@ const environmentSchema = z.object({
 
 export type Environment = z.infer<typeof environmentSchema>;
 
+// todo: more custom error types; integrate modern Zed4 custom errors
+export class EnvironmentConfigurationError extends Error {
+  constructor(public readonly issues: z.core.$ZodIssue[]) {
+    super("Invalid environment configuration");
+    this.name = "EnvironmentConfigurationError";
+  }
+}
+
 export function loadEnvironment(
   source: NodeJS.ProcessEnv = process.env,
 ): Environment {
-  return environmentSchema.parse(source);
+  const result = environmentSchema.safeParse(source);
+
+  if (!result.success) {
+    throw new EnvironmentConfigurationError(result.error.issues);
+  }
+
+  return result.data;
 }
