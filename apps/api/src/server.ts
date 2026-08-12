@@ -9,7 +9,7 @@ import { loadEnvironment } from "./config.js";
 loadDotenv({
   // fix to resolve .env in root dir
   path: new URL("../../../.env", import.meta.url),
-  quiet: true
+  quiet: true,
 });
 
 const environment = loadEnvironment();
