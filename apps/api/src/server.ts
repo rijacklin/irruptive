@@ -1,4 +1,4 @@
-import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
 import {
   checkDatabaseConnection,
   createDatabasePool,
@@ -6,9 +6,15 @@ import {
 import { createApp } from "./app.js";
 import { loadEnvironment } from "./config.js";
 
-const environment = loadEnvironment();
-const pool = createDatabasePool({ connectionString: environment.DATABASE_URL });
+loadDotenv({
+  // fix to resolve .env in root dir
+  path: new URL("../../../.env", import.meta.url),
+  quiet: true
+});
 
+const environment = loadEnvironment();
+
+const pool = createDatabasePool({ connectionString: environment.DATABASE_URL });
 await checkDatabaseConnection(pool);
 console.log("Database connection established");
 
@@ -30,5 +36,6 @@ async function shutdown(signal: string): Promise<void> {
   });
 }
 
+// server can listen to OS signals to properly shutdowwn
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));

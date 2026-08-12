@@ -5,7 +5,10 @@ import type { HealthResponse } from "@irruptive/shared";
 export function createApp() {
   const app = express();
 
+  // don't unnecessarily advertise implementation details
   app.disable("x-powered-by");
+
+  // attach middleware
   app.use(cors());
   app.use(express.json());
 
