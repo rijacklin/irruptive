@@ -16,7 +16,8 @@ export {
 
 export type {
   CreateWorkOrderInput,
-  LastWorkOrdersInput,
+  ListWorkOrdersInput,
+  UpdateWorkOrderPriorityInput,
   WorkOrder,
   WorkOrderPriority,
   WorkOrderStatus,

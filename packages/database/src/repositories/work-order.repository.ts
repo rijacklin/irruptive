@@ -42,9 +42,13 @@ export interface CreateWorkOrderInput {
   assignedTo?: string | null;
 }
 
-export interface LastWorkOrdersInput {
+export interface ListWorkOrdersInput {
   limit: number;
   offset: number;
+}
+
+export interface UpdateWorkOrderPriorityInput {
+  priority: WorkOrderPriority;
 }
 
 interface WorkOrderRow {
@@ -135,11 +139,10 @@ export class WorkOrderRepository {
     );
 
     const row = result.rows[0];
-
     return row ? mapWorkOrderRow(row) : null;
   }
 
-  async list(input: LastWorkOrdersInput): Promise<WorkOrder[]> {
+  async list(input: ListWorkOrdersInput): Promise<WorkOrder[]> {
     const result = await this.pool.query<WorkOrderRow>(
       `
         SELECT ${workOrderColumns}
@@ -152,5 +155,37 @@ export class WorkOrderRepository {
     );
 
     return result.rows.map(mapWorkOrderRow);
+  }
+
+  async updatePriority(
+    id: string,
+    input: UpdateWorkOrderPriorityInput,
+  ): Promise<WorkOrder | null> {
+    const result = await this.pool.query<WorkOrderRow>(
+      `
+        UPDATE work_orders
+        SET
+          priority = $2,
+            updated_at = now()
+        WHERE id = $1
+        RETURNING ${workOrderColumns}
+      `,
+      [id, input.priority],
+    );
+
+    const row = result.rows[0];
+    return row ? mapWorkOrderRow(row) : null;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `
+        DELETE FROM work_orders
+        WHERE id = $1
+      `,
+      [id],
+    );
+
+    return result.rowCount === 1;
   }
 }

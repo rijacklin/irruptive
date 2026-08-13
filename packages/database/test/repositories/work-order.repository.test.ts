@@ -49,13 +49,13 @@ it("creates a work order with database defaults", async () => {
   const createdBy = await createUser();
 
   const workOrder = await repository.create({
-    title: "Conveyer intermittently stopping",
+    title: "Conveyor intermittently stopping",
     description: "Operator reports grinding before shutdown.",
     createdBy,
   });
 
   expect(workOrder).toMatchObject({
-    title: "Conveyer intermittently stopping",
+    title: "Conveyor intermittently stopping",
     description: "Operator reports grinding before shutdown.",
     status: "open",
     priority: "medium",
@@ -105,6 +105,38 @@ it("returns null when a work order does not exist", async () => {
   await expect(repository.findById(randomUUID())).resolves.toBeNull();
 });
 
+it("updates a work order priority", async () => {
+  const createdBy = await createUser();
+
+  const created = await repository.create({
+    title: "Conveyor intermittently stopping",
+    description: "Operator reports grinding before shutdown.",
+    createdBy,
+  });
+
+  const updated = await repository.updatePriority(created.id, {
+    priority: "critical",
+  });
+
+  expect(updated).toMatchObject({
+    id: created.id,
+    title: created.title,
+    description: created.description,
+    priority: "critical",
+    createdBy,
+  });
+
+  expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
+    created.updatedAt.getTime(),
+  );
+});
+
+it("returns null when updating a missing work order", async () => {
+  await expect(
+    repository.updatePriority(randomUUID(), { priority: "critical" }),
+  ).resolves.toBeNull();
+});
+
 it("lists work orders with pagination", async () => {
   const createdBy = await createUser();
 
@@ -127,4 +159,21 @@ it("lists work orders with pagination", async () => {
 
   expect(results).toHaveLength(1);
   expect([first.id, second.id]).toContain(results[0]?.id);
+});
+
+it("deletes an existing work order", async () => {
+  const createdBy = await createUser();
+
+  const workOrder = await repository.create({
+    title: "Remove obsolete report",
+    description: "This work order was created for deletion testing.",
+    createdBy,
+  });
+
+  await expect(repository.delete(workOrder.id)).resolves.toBe(true);
+  await expect(repository.findById(workOrder.id)).resolves.toBeNull();
+});
+
+it("returns false when deleting a missing work order", async () => {
+  await expect(repository.delete(randomUUID())).resolves.toBe(false);
 });
