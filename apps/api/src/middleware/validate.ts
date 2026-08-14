@@ -11,13 +11,20 @@ export function validate(
     const result = schema.safeParse(request[location]);
 
     if (!result.success) {
+      const details = result.error.issues.map((issue) => ({
+        path: issue.path.map(String).join("."),
+        code: issue.code,
+        message: issue.message,
+      }));
+
       response.status(400).json({
         error: {
           code: "VALIDATION_ERROR",
           message: "The request is invalid.",
-          details: result.error.issues,
+          details: details,
         },
       });
+
       return;
     }
 
