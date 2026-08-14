@@ -1,4 +1,5 @@
 import type { WorkOrderResponse } from "@irruptive/shared";
+import { Link } from "react-router-dom";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -67,9 +68,12 @@ export function WorkOrderTable({ workOrders, isLoading }: WorkOrderTableProps) {
             workOrders.map((workOrder) => (
               <TableRow key={workOrder.id}>
                 <TableCell className="max-w-80">
-                  <span className="block truncate font-medium">
+                  <Link
+                    to={`/work-orders/${workOrder.id}`}
+                    className="block truncate font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     {workOrder.title}
-                  </span>
+                  </Link>
                 </TableCell>
 
                 <TableCell>

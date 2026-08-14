@@ -44,3 +44,7 @@ export interface ListWorkOrdersResponse {
     offset: number;
   };
 }
+
+export interface GetWorkOrderResponse {
+  data: WorkOrderResponse;
+}
