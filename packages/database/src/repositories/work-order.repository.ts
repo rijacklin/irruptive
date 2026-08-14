@@ -47,8 +47,11 @@ export interface ListWorkOrdersInput {
   offset: number;
 }
 
-export interface UpdateWorkOrderPriorityInput {
-  priority: WorkOrderPriority;
+export interface UpdateWorkOrderInput {
+  status?: WorkOrderStatus;
+  priority?: WorkOrderPriority;
+  category?: string | null;
+  assignedTo?: string | null;
 }
 
 interface WorkOrderRow {
@@ -157,20 +160,48 @@ export class WorkOrderRepository {
     return result.rows.map(mapWorkOrderRow);
   }
 
-  async updatePriority(
+  async update(
     id: string,
-    input: UpdateWorkOrderPriorityInput,
+    input: UpdateWorkOrderInput,
   ): Promise<WorkOrder | null> {
+    const assignments: string[] = [];
+    const values: unknown[] = [id];
+
+    const addAssignment = (column: string, value: unknown) => {
+      values.push(value);
+      assignments.push(`${column} = $${values.length}`);
+    };
+
+    if (input.status !== undefined) {
+      addAssignment("status", input.status);
+    }
+
+    if (input.priority !== undefined) {
+      addAssignment("priority", input.priority);
+    }
+
+    if (input.category !== undefined) {
+      addAssignment("category", input.category);
+    }
+
+    if (input.assignedTo !== undefined) {
+      addAssignment("assigned_to", input.assignedTo);
+    }
+
+    if (assignments.length === 0) {
+      throw new Error("Update requires at least one field");
+    }
+
     const result = await this.pool.query<WorkOrderRow>(
       `
         UPDATE work_orders
         SET
-          priority = $2,
-            updated_at = now()
+          ${assignments.join(",\n")},
+          updated_at = now()
         WHERE id = $1
         RETURNING ${workOrderColumns}
       `,
-      [id, input.priority],
+      values,
     );
 
     const row = result.rows[0];

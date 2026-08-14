@@ -1,10 +1,12 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { createApp } from "./app.js";
+import { createTestApp } from "./test/create-test-app.js";
 
 describe("GET /health", () => {
   it("reports that the API is healthy", async () => {
-    const response = await request(createApp()).get("/health");
+    const { app } = createTestApp();
+
+    const response = await request(app).get("/health");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: "ok" });

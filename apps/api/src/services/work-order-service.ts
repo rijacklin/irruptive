@@ -1,7 +1,7 @@
 import type {
   CreateWorkOrderInput,
   ListWorkOrdersInput,
-  UpdateWorkOrderPriorityInput,
+  UpdateWorkOrderInput,
   WorkOrder,
 } from "@irruptive/database";
 import { WorkOrderNotFoundError } from "../errors/application-error.js";
@@ -10,10 +10,7 @@ export interface WorkOrderStore {
   create(input: CreateWorkOrderInput): Promise<WorkOrder>;
   findById(id: string): Promise<WorkOrder | null>;
   list(input: ListWorkOrdersInput): Promise<WorkOrder[]>;
-  updatePriority(
-    id: string,
-    input: UpdateWorkOrderPriorityInput,
-  ): Promise<WorkOrder | null>;
+  update(id: string, input: UpdateWorkOrderInput): Promise<WorkOrder | null>;
   delete(id: string): Promise<boolean>;
 }
 
@@ -38,11 +35,8 @@ export class WorkOrderService {
     return this.workOrders.list(input);
   }
 
-  async updatePriority(
-    id: string,
-    input: UpdateWorkOrderPriorityInput,
-  ): Promise<WorkOrder> {
-    const workOrder = await this.workOrders.updatePriority(id, input);
+  async update(id: string, input: UpdateWorkOrderInput): Promise<WorkOrder> {
+    const workOrder = await this.workOrders.update(id, input);
 
     if (!workOrder) {
       throw new WorkOrderNotFoundError(id);

@@ -2,9 +2,11 @@ import { config as loadDotenv } from "dotenv";
 import {
   checkDatabaseConnection,
   createDatabasePool,
+  WorkOrderRepository,
 } from "@irruptive/database";
 import { createApp } from "./app.js";
 import { loadEnvironment } from "./config.js";
+import { WorkOrderService } from "./services/work-order-service.js";
 
 loadDotenv({
   // fix to resolve .env in root dir
@@ -18,15 +20,15 @@ const pool = createDatabasePool({ connectionString: environment.DATABASE_URL });
 await checkDatabaseConnection(pool);
 console.log("Database connection established");
 
-const server = createApp().listen(
-  environment.API_PORT,
-  environment.API_HOST,
-  () => {
-    console.log(
-      `API listening on http://${environment.API_HOST}:${environment.API_PORT}`,
-    );
-  },
-);
+const repository = new WorkOrderRepository(pool);
+const service = new WorkOrderService(repository);
+const app = createApp({ workOrderService: service });
+
+const server = app.listen(environment.API_PORT, environment.API_HOST, () => {
+  console.log(
+    `API listening on http://${environment.API_HOST}:${environment.API_PORT}`,
+  );
+});
 
 async function shutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}; shutting down`);
