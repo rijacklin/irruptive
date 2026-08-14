@@ -24,7 +24,7 @@ describe("WorkOrderService", () => {
       create: vi.fn(),
       findById: vi.fn(),
       list: vi.fn(),
-      updatePriority: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     };
 
@@ -87,20 +87,18 @@ describe("WorkOrderService", () => {
       priority: "critical",
     } as const;
 
-    vi.mocked(repository.updatePriority).mockResolvedValue(updated);
+    vi.mocked(repository.update).mockResolvedValue(updated);
 
-    await expect(service.updatePriority(workOrder.id, input)).resolves.toEqual(
-      updated,
-    );
+    await expect(service.update(workOrder.id, input)).resolves.toEqual(updated);
 
-    expect(repository.updatePriority).toHaveBeenCalledWith(workOrder.id, input);
+    expect(repository.update).toHaveBeenCalledWith(workOrder.id, input);
   });
 
   it("throws when updating a missing work order", async () => {
-    vi.mocked(repository.updatePriority).mockResolvedValue(null);
+    vi.mocked(repository.update).mockResolvedValue(null);
 
     await expect(
-      service.updatePriority(workOrder.id, { priority: "critical" }),
+      service.update(workOrder.id, { priority: "critical" }),
     ).rejects.toMatchObject({
       code: "WORK_ORDER_NOT_FOUND",
     });

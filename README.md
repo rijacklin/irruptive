@@ -60,4 +60,12 @@ packages/shared   Browser/server-safe shared contracts
 packages/database PostgreSQL connection boundary
 ```
 
-No work-order domain functionality or AI integration is included yet; those belong to later phases.
+## Work-order API
+
+The API currently supports:
+
+- `POST /api/work-orders`
+- `GET /api/work-orders`
+- `GET /api/work-orders/:id`
+- `PATCH /api/work-orders/:id`
+- `DELETE /api/work-orders/:id`

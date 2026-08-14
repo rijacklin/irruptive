@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { workOrderPriorities } from "@irruptive/database";
+import { workOrderPriorities, workOrderStatuses } from "@irruptive/database";
 
 export const createWorkOrderSchema = z
   .object({
@@ -14,3 +14,30 @@ export const createWorkOrderSchema = z
   .strict();
 
 export type CreateWorkOrderRequest = z.infer<typeof createWorkOrderSchema>;
+
+export const workOrderIdParamsSchema = z.object({
+  id: z.uuid(),
+});
+
+export type WorkOrderIdParams = z.infer<typeof workOrderIdParamsSchema>;
+
+export const listWorkOrdersQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export type ListWorkOrdersRequest = z.infer<typeof listWorkOrdersQuerySchema>;
+
+export const updateWorkOrderSchema = z
+  .object({
+    status: z.enum(workOrderStatuses).optional(),
+    priority: z.enum(workOrderPriorities).optional(),
+    category: z.string().trim().min(1).nullable().optional(),
+    assignedTo: z.uuid().nullable().optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one field must be supplied.",
+  });
+
+export type UpdateWorkOrderRequest = z.infer<typeof updateWorkOrderSchema>;
