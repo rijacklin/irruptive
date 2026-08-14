@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import type { WorkOrderResponse } from "@irruptive/shared";
 
 import { WorkOrderTable } from "./work-order-table";
@@ -25,11 +26,17 @@ afterEach(() => {
 
 describe("WorkOrderTable", () => {
   it("renders work-order data", () => {
-    render(<WorkOrderTable workOrders={[workOrder]} isLoading={false} />);
+    render(
+      <MemoryRouter>
+        <WorkOrderTable workOrders={[workOrder]} isLoading={false} />
+      </MemoryRouter>,
+    );
 
     expect(
-      screen.getByText("Conveyor intermittently stopping"),
-    ).toBeInTheDocument();
+      screen.getByRole("link", {
+        name: "Conveyor intermittently stopping",
+      }),
+    ).toHaveAttribute("href", `/work-orders/${workOrder.id}`);
     expect(screen.getByText("Open")).toBeInTheDocument();
     expect(screen.getByText("High")).toBeInTheDocument();
     expect(screen.getByText("Mechanical")).toBeInTheDocument();
