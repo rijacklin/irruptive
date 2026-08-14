@@ -19,6 +19,187 @@ const workOrder: WorkOrder = {
   updatedAt: new Date("2026-08-13T12:00:00.000Z"),
 };
 
+const validCreateBody = {
+  title: "Conveyor intermittently stopping",
+  description: "Operator reports grinding before shutdown.",
+  priority: "high",
+  category: "Mechanical",
+  createdBy,
+};
+
+interface InvalidCreateCase {
+  name: string;
+  body: Record<string, unknown>;
+  expectedPath: string;
+}
+
+const invalidCreateCases: InvalidCreateCase[] = [
+  {
+    name: "missing title",
+    body: {
+      description: validCreateBody.description,
+      createdBy,
+    },
+    expectedPath: "title",
+  },
+  {
+    name: "title below minimum length",
+    body: {
+      ...validCreateBody,
+      title: "ab",
+    },
+    expectedPath: "title",
+  },
+  {
+    name: "title above maximum length",
+    body: {
+      ...validCreateBody,
+      title: "a".repeat(201),
+    },
+    expectedPath: "title",
+  },
+  {
+    name: "missing description",
+    body: {
+      title: validCreateBody.title,
+      createdBy,
+    },
+    expectedPath: "description",
+  },
+  {
+    name: "description below minimum length",
+    body: {
+      ...validCreateBody,
+      description: "123456789",
+    },
+    expectedPath: "description",
+  },
+  {
+    name: "missing creator",
+    body: {
+      title: validCreateBody.title,
+      description: validCreateBody.description,
+    },
+    expectedPath: "createdBy",
+  },
+  {
+    name: "invalid creator UUID",
+    body: {
+      ...validCreateBody,
+      createdBy: "not-a-uuid",
+    },
+    expectedPath: "createdBy",
+  },
+  {
+    name: "invalid priority",
+    body: {
+      ...validCreateBody,
+      priority: "urgent",
+    },
+    expectedPath: "priority",
+  },
+  {
+    name: "blank category",
+    body: {
+      ...validCreateBody,
+      category: "   ",
+    },
+    expectedPath: "category",
+  },
+];
+
+interface InvalidPatchCase {
+  name: string;
+  body: Record<string, unknown>;
+  expectedPath: string;
+}
+
+const invalidPatchCases: InvalidPatchCase[] = [
+  {
+    name: "invalid priority",
+    body: { priority: "urgent" },
+    expectedPath: "priority",
+  },
+  {
+    name: "invalid status",
+    body: { status: "working" },
+    expectedPath: "status",
+  },
+  {
+    name: "blank category",
+    body: { category: "   " },
+    expectedPath: "category",
+  },
+  {
+    name: "invalid assignee",
+    body: { assignedTo: "not-a-uuid" },
+    expectedPath: "assignedTo",
+  },
+];
+
+interface ClearFieldCase {
+  name: string;
+  body: {
+    category?: null;
+    assignedTo?: null;
+  };
+}
+
+const clearFieldCases: ClearFieldCase[] = [
+  {
+    name: "category",
+    body: { category: null },
+  },
+  {
+    name: "assignment",
+    body: { assignedTo: null },
+  },
+];
+
+interface InvalidPaginationCase {
+  name: string;
+  query: string;
+  expectedPath: "limit" | "offset";
+}
+
+const invalidPaginationCases: InvalidPaginationCase[] = [
+  {
+    name: "limit below minimum",
+    query: "limit=0",
+    expectedPath: "limit",
+  },
+  {
+    name: "limit above maximum",
+    query: "limit=101",
+    expectedPath: "limit",
+  },
+  {
+    name: "fractional limit",
+    query: "limit=1.5",
+    expectedPath: "limit",
+  },
+  {
+    name: "non-numeric limit",
+    query: "limit=abc",
+    expectedPath: "limit",
+  },
+  {
+    name: "negative offset",
+    query: "offset=-1",
+    expectedPath: "offset",
+  },
+  {
+    name: "fractional offset",
+    query: "offset=1.5",
+    expectedPath: "offset",
+  },
+  {
+    name: "non-numeric offset",
+    query: "offset=abc",
+    expectedPath: "offset",
+  },
+];
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -55,26 +236,6 @@ describe("POST /api/work-orders", () => {
     });
   });
 
-  it("rejects an invalid body before calling the store", async () => {
-    const { app, store } = createTestApp();
-
-    const response = await request(app).post("/api/work-orders").send({
-      title: "x",
-      description: "short",
-      createdBy: "not-a-uuid",
-    });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "The request is invalid.",
-      },
-    });
-
-    expect(store.create).not.toHaveBeenCalled();
-  });
-
   it("rejects unknown request properties", async () => {
     const { app, store } = createTestApp();
 
@@ -88,6 +249,27 @@ describe("POST /api/work-orders", () => {
     expect(response.status).toBe(400);
     expect(store.create).not.toHaveBeenCalled();
   });
+
+  it.for(invalidCreateCases)(
+    "rejects $name",
+    async ({ body, expectedPath }) => {
+      const { app, store } = createTestApp();
+
+      const response = await request(app).post("/api/work-orders").send(body);
+
+      expect(response.status).toBe(400);
+
+      expect(response.body.error.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: expectedPath,
+          }),
+        ]),
+      );
+
+      expect(store.create).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("GET /api/work-orders/:id", () => {
@@ -161,14 +343,42 @@ describe("GET /api/work-orders", () => {
     });
   });
 
-  it("rejects invalid pagination", async () => {
+  it.for(invalidPaginationCases)(
+    "rejects $name",
+    async ({ query, expectedPath }) => {
+      const { app, store } = createTestApp();
+
+      const response = await request(app).get(`/api/work-orders?${query}`);
+
+      expect(response.status).toBe(400);
+
+      expect(response.body.error.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: expectedPath,
+          }),
+        ]),
+      );
+
+      expect(store.list).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects unknown query parameters", async () => {
     const { app, store } = createTestApp();
 
-    const response = await request(app).get(
-      "/api/work-orders?limit=101&offset=-1",
-    );
+    const response = await request(app).get("/api/work-orders?limti=10");
 
     expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "unrecognized_keys",
+        }),
+      ]),
+    );
+
     expect(store.list).not.toHaveBeenCalled();
   });
 });
@@ -240,6 +450,42 @@ describe("PATCH /api/work-orders/:id", () => {
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe("WORK_ORDER_NOT_FOUND");
   });
+
+  it.for(invalidPatchCases)("rejects $name", async ({ body, expectedPath }) => {
+    const { app, store } = createTestApp();
+
+    const response = await request(app)
+      .patch(`/api/work-orders/${workOrderId}`)
+      .send(body);
+
+    expect(response.status).toBe(400);
+
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: expectedPath,
+        }),
+      ]),
+    );
+
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
+  it.for(clearFieldCases)("accepts clearing $name", async ({ body }) => {
+    const { app, store } = createTestApp();
+
+    vi.mocked(store.update).mockResolvedValue({
+      ...workOrder,
+      ...body,
+    });
+
+    const response = await request(app)
+      .patch(`/api/work-orders/${workOrderId}`)
+      .send(body);
+
+    expect(response.status).toBe(200);
+    expect(store.update).toHaveBeenCalledWith(workOrderId, body);
+  });
 });
 
 describe("DELETE /api/work-orders/:id", () => {
@@ -306,5 +552,23 @@ describe("error handling", () => {
 
     expect(response.text).not.toContain("database password");
     consoleError.mockRestore();
+  });
+
+  it("returns 400 for malformed JSON", async () => {
+    const { app, store } = createTestApp();
+
+    const response = await request(app)
+      .post("/api/work-orders")
+      .set("Content-Type", "application/json")
+      .send('{"title":');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        code: "INVALID_JSON",
+        message: "The request body contains invalid JSON.",
+      },
+    });
+    expect(store.create).not.toHaveBeenCalled();
   });
 });
