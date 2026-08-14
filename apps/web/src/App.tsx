@@ -1,12 +1,12 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { WorkOrderListPage } from "@/pages/work-order-list-page";
+
 export function App() {
   return (
-    <main className="shell">
-      <p className="eyebrow">Operations, clearly managed</p>
-      <h1>Irruptive</h1>
-      <p className="lede">
-        The project foundation is running. Work-order workflows arrive in Phase
-        2.
-      </p>
-    </main>
+    <Routes>
+      <Route path="/" element={<Navigate to="/work-orders" replace />} />
+      <Route path="/work-orders" element={<WorkOrderListPage />} />
+      <Route path="*" element={<Navigate to="/work-orders" replace />} />
+    </Routes>
   );
 }
