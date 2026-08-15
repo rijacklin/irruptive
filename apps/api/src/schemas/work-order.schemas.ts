@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { workOrderPriorities, workOrderStatuses } from "@irruptive/database";
+import { workOrderPriorities, workOrderStatuses } from "@irruptive/shared";
 
 export const createWorkOrderSchema = z
   .object({

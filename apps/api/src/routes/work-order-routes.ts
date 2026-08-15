@@ -13,31 +13,35 @@ export function createWorkOrderRouter(service: WorkOrderService) {
   const router = Router();
   const controller = createWorkOrderController(service);
 
-  router.post("/", validate("body", createWorkOrderSchema), controller.create);
+  router.post(
+    "/",
+    validate({ body: createWorkOrderSchema }, controller.create),
+  );
 
   router.get(
     "/",
-    validate("query", listWorkOrdersQuerySchema),
-    controller.list,
+    validate({ query: listWorkOrdersQuerySchema }, controller.list),
   );
 
   router.get(
     "/:id",
-    validate("params", workOrderIdParamsSchema),
-    controller.getById,
+    validate({ params: workOrderIdParamsSchema }, controller.getById),
   );
 
   router.patch(
     "/:id",
-    validate("params", workOrderIdParamsSchema),
-    validate("body", updateWorkOrderSchema),
-    controller.update,
+    validate(
+      {
+        params: workOrderIdParamsSchema,
+        body: updateWorkOrderSchema,
+      },
+      controller.update,
+    ),
   );
 
   router.delete(
     "/:id",
-    validate("params", workOrderIdParamsSchema),
-    controller.delete,
+    validate({ params: workOrderIdParamsSchema }, controller.delete),
   );
 
   return router;

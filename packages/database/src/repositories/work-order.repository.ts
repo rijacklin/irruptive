@@ -1,24 +1,5 @@
 import type { Pool } from "pg";
-
-export const workOrderStatuses = [
-  "open",
-  "assigned",
-  "in_progress",
-  "blocked",
-  "resolved",
-  "closed",
-] as const;
-
-export type WorkOrderStatus = (typeof workOrderStatuses)[number];
-
-export const workOrderPriorities = [
-  "low",
-  "medium",
-  "high",
-  "critical",
-] as const;
-
-export type WorkOrderPriority = (typeof workOrderPriorities)[number];
+import type { WorkOrderPriority, WorkOrderStatus } from "@irruptive/shared";
 
 export interface WorkOrder {
   id: string;
