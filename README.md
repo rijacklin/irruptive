@@ -70,6 +70,28 @@ Initial setup applies the migrations already committed to the repository. To cre
 npm run db:create-migration -- add-work-order-comments
 ```
 
+### API integration tests
+
+The API integration suite uses the real Express, service, repository, and PostgreSQL stack. It requires a dedicated test database so cleanup cannot remove local development data. Create it once after starting PostgreSQL:
+
+```bash
+docker compose exec postgres createdb -U irruptive irruptive_test
+```
+
+If the database already exists, skip that command. Keep `TEST_DATABASE_URL` distinct from `DATABASE_URL`, as shown in `.env.example`.
+
+Run the API integration suite with:
+
+```bash
+npm run test:api:integration
+```
+
+This applies pending migrations to `TEST_DATABASE_URL` before running the focused suite. To migrate the test database and run every formatting, linting, typecheck, test, and build check, use:
+
+```bash
+npm run verify:integration
+```
+
 ## Quality checks
 
 ```bash
