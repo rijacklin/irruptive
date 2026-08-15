@@ -1,4 +1,6 @@
 import type {
+  CreateWorkOrderRequest,
+  CreateWorkOrderResponse,
   GetWorkOrderResponse,
   ListWorkOrdersResponse,
 } from "@irruptive/shared";
@@ -65,4 +67,28 @@ export async function getWorkOrder(
   }
 
   return (await response.json()) as GetWorkOrderResponse;
+}
+
+export async function createWorkOrder(
+  input: CreateWorkOrderRequest,
+): Promise<CreateWorkOrderResponse> {
+  const url = new URL("/api/work-orders", apiBaseUrl);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new WorkOrderApiError(
+      `Unable to create work order (${response.status}).`,
+      response.status,
+    );
+  }
+
+  return (await response.json()) as CreateWorkOrderResponse;
 }
