@@ -5,6 +5,7 @@ import {
   WorkOrderPriorityBadge,
   WorkOrderStatusBadge,
 } from "@/components/work-orders/work-order-badges";
+import { WorkOrderUpdateForm } from "@/components/work-orders/work-order-update-form";
 import { useWorkOrder } from "@/hooks/use-work-order";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -93,6 +94,12 @@ export function WorkOrderDetailsPage() {
           </div>
         </div>
       </header>
+
+      <WorkOrderUpdateForm
+        id={workOrder.id}
+        status={workOrder.status}
+        priority={workOrder.priority}
+      />
 
       <section
         className="rounded-lg border p-5"

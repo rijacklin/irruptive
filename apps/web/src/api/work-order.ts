@@ -3,6 +3,8 @@ import type {
   CreateWorkOrderResponse,
   GetWorkOrderResponse,
   ListWorkOrdersResponse,
+  UpdateWorkOrderRequest,
+  UpdateWorkOrderResponse,
 } from "@irruptive/shared";
 
 export interface ListWorkOrdersParams {
@@ -91,4 +93,29 @@ export async function createWorkOrder(
   }
 
   return (await response.json()) as CreateWorkOrderResponse;
+}
+
+export async function updateWorkOrder(
+  id: string,
+  input: UpdateWorkOrderRequest,
+): Promise<UpdateWorkOrderResponse> {
+  const url = new URL(`/api/work-orders/${encodeURIComponent(id)}`, apiBaseUrl);
+
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new WorkOrderApiError(
+      `Unable to update work order (${response.status}).`,
+      response.status,
+    );
+  }
+
+  return (await response.json()) as UpdateWorkOrderResponse;
 }
