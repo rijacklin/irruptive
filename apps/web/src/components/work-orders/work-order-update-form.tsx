@@ -80,7 +80,7 @@ export function WorkOrderUpdateForm({
 
   return (
     <section className="rounded-lg border p-5" aria-labelledby="update-heading">
-      <h2 id="update-heading" className="text-lg font-semibold">
+      <h2 id="update-heading" className="text-xl font-semibold">
         Update work order
       </h2>
 

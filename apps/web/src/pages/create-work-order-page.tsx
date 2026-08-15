@@ -72,10 +72,10 @@ export function CreateWorkOrderPage() {
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Work order
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
             Create work order
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-base text-muted-foreground">
             Report an operational issue for review and assignment.
           </p>
         </div>

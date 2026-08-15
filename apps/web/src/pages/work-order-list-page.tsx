@@ -50,10 +50,10 @@ export function WorkOrderListPage() {
             Operations
           </p>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-3xl font-semibold tracking-tight">
               Work orders
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-base text-muted-foreground">
               Review and track operational issues.
             </p>
           </div>
@@ -120,7 +120,7 @@ export function WorkOrderListPage() {
 
                 <PaginationItem>
                   <span
-                    className="flex h-7 items-center px-3 text-xs"
+                    className="flex h-9 items-center px-3 text-sm"
                     aria-current="page"
                   >
                     Page {page}
@@ -145,7 +145,7 @@ export function WorkOrderListPage() {
               </PaginationContent>
             </Pagination>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Showing up to {pageSize} work orders per page
             </p>
           </div>
