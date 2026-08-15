@@ -48,3 +48,16 @@ export interface ListWorkOrdersResponse {
 export interface GetWorkOrderResponse {
   data: WorkOrderResponse;
 }
+
+export interface CreateWorkOrderRequest {
+  title: string;
+  description: string;
+  // TODO(auth): Remove when the API derives the creator from authentication.
+  createdBy: string;
+  priority?: WorkOrderPriority;
+  category?: string | null;
+}
+
+export interface CreateWorkOrderResponse {
+  data: WorkOrderResponse;
+}
