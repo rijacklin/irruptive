@@ -1,6 +1,7 @@
 import type { WorkOrder } from "@irruptive/database";
+import type { WorkOrderResponse } from "@irruptive/shared";
 
-export function serializeWorkOrder(workOrder: WorkOrder) {
+export function serializeWorkOrder(workOrder: WorkOrder): WorkOrderResponse {
   return {
     id: workOrder.id,
     title: workOrder.title,

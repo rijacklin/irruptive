@@ -15,10 +15,10 @@ import type {
 export function createWorkOrderController(service: WorkOrderService) {
   return {
     create: async (
-      _request: Request<Record<string, never>, unknown, CreateWorkOrderRequest>,
+      { body }: { body: CreateWorkOrderRequest },
+      _request: Request,
       response: Response,
     ) => {
-      const body = response.locals.validated.body as CreateWorkOrderRequest;
       const input: CreateWorkOrderInput = {
         title: body.title,
         description: body.description,
@@ -35,10 +35,10 @@ export function createWorkOrderController(service: WorkOrderService) {
     },
 
     getById: async (
-      _request: Request<WorkOrderIdParams>,
+      { params }: { params: WorkOrderIdParams },
+      _request: Request,
       response: Response,
     ) => {
-      const params = response.locals.validated.params as WorkOrderIdParams;
       const workOrder = await service.getById(params.id);
 
       response.json({
@@ -46,22 +46,30 @@ export function createWorkOrderController(service: WorkOrderService) {
       });
     },
 
-    list: async (_request: Request, response: Response) => {
-      const input = response.locals.validated.query as ListWorkOrdersRequest;
-      const workOrders = await service.list(input);
+    list: async (
+      { query }: { query: ListWorkOrdersRequest },
+      _request: Request,
+      response: Response,
+    ) => {
+      const workOrders = await service.list(query);
 
       response.json({
         data: workOrders.map(serializeWorkOrder),
-        pagination: input,
+        pagination: query,
       });
     },
 
     update: async (
-      _request: Request<WorkOrderIdParams, unknown, UpdateWorkOrderRequest>,
+      {
+        params,
+        body,
+      }: {
+        params: WorkOrderIdParams;
+        body: UpdateWorkOrderRequest;
+      },
+      _request: Request,
       response: Response,
     ) => {
-      const params = response.locals.validated.params as WorkOrderIdParams;
-      const body = response.locals.validated.body as UpdateWorkOrderRequest;
       const input: UpdateWorkOrderInput = {
         ...(body.status !== undefined ? { status: body.status } : {}),
         ...(body.priority !== undefined ? { priority: body.priority } : {}),
@@ -79,11 +87,10 @@ export function createWorkOrderController(service: WorkOrderService) {
     },
 
     delete: async (
-      _request: Request<WorkOrderIdParams>,
+      { params }: { params: WorkOrderIdParams },
+      _request: Request,
       response: Response,
     ) => {
-      const params = response.locals.validated.params as WorkOrderIdParams;
-
       await service.delete(params.id);
       response.status(204).send();
     },

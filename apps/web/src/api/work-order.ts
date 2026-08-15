@@ -33,6 +33,7 @@ export async function listWorkOrders(
   return (await response.json()) as ListWorkOrdersResponse;
 }
 
+// TODO: why error definition inside api?
 export class WorkOrderApiError extends Error {
   constructor(
     message: string,
