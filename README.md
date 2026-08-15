@@ -12,9 +12,16 @@ Irruptive is a production-oriented, AI-first, work-order management application.
 
 ## Local setup
 
+Install the dependencies and create your local environment file:
+
 ```bash
 npm install
 cp .env.example .env
+```
+
+Start PostgreSQL, wait for it to become healthy, and apply the existing database migrations:
+
+```bash
 docker compose up -d postgres
 ```
 
@@ -39,6 +46,29 @@ Expected response:
 ```
 
 The API verifies its PostgreSQL connection before it begins listening. If PostgreSQL is unavailable or `DATABASE_URL` is invalid, API startup fails instead of reporting a misleading healthy state.
+
+### PostgreSQL port conflicts
+
+PostgreSQL uses host port `5432` by default. If another PostgreSQL instance or application already uses that port, choose an unused port in your local `.env`. For example:
+
+```dotenv
+POSTGRES_PORT=5433
+DATABASE_URL=postgresql://irruptive:irruptive@localhost:5433/irruptive
+```
+
+`POSTGRES_PORT` and the port in `DATABASE_URL` must match. After changing the port, run:
+
+```bash
+npm run db:setup
+```
+
+### Creating database migrations
+
+Initial setup applies the migrations already committed to the repository. To create a new migration while developing a schema change, provide a descriptive name:
+
+```bash
+npm run db:create-migration -- add-work-order-comments
+```
 
 ## Quality checks
 
