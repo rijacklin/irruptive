@@ -15,6 +15,8 @@ export default defineConfig({
         test: {
           name: "node",
           environment: "node",
+          // Database-backed suites share TEST_DATABASE_URL and clean shared tables.
+          fileParallelism: false,
           include: [
             "apps/api/**/*.test.ts",
             "apps/worker/**/*.test.ts",
