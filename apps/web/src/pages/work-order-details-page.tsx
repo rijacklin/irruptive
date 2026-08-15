@@ -40,7 +40,7 @@ export function WorkOrderDetailsPage() {
           role="alert"
         >
           <div>
-            <h1 className="font-medium">Could not load work order</h1>
+            <h1 className="text-xl font-semibold">Could not load work order</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {workOrderQuery.error instanceof Error
                 ? workOrderQuery.error.message
@@ -83,7 +83,7 @@ export function WorkOrderDetailsPage() {
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Work order
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight">
               {workOrder.title}
             </h1>
           </div>
@@ -105,10 +105,10 @@ export function WorkOrderDetailsPage() {
         className="rounded-lg border p-5"
         aria-labelledby="description-heading"
       >
-        <h2 id="description-heading" className="text-lg font-semibold">
+        <h2 id="description-heading" className="text-xl font-semibold">
           Description
         </h2>
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
+        <p className="mt-3 whitespace-pre-wrap text-base leading-7">
           {workOrder.description}
         </p>
       </section>
@@ -117,11 +117,11 @@ export function WorkOrderDetailsPage() {
         className="rounded-lg border p-5"
         aria-labelledby="details-heading"
       >
-        <h2 id="details-heading" className="text-lg font-semibold">
+        <h2 id="details-heading" className="text-xl font-semibold">
           Details
         </h2>
 
-        <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+        <dl className="mt-4 grid gap-4 text-base sm:grid-cols-2">
           <div>
             <dt className="text-muted-foreground">Category</dt>
             <dd className="mt-1 font-medium">

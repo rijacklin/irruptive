@@ -7,6 +7,18 @@
       name="description"
       content="AI-assisted operational work-order management"
     />
+    <script>
+      (() => {
+        const storedTheme = localStorage.getItem("irruptive-theme");
+        const dark =
+          storedTheme === "dark" ||
+          (storedTheme !== "light" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      })();
+    </script>
     <title>Irruptive</title>
   </head>
   <body>
