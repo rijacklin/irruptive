@@ -61,3 +61,12 @@ export interface CreateWorkOrderRequest {
 export interface CreateWorkOrderResponse {
   data: WorkOrderResponse;
 }
+
+export interface UpdateWorkOrderRequest {
+  status?: WorkOrderStatus;
+  priority?: WorkOrderPriority;
+}
+
+export interface UpdateWorkOrderResponse {
+  data: WorkOrderResponse;
+}

@@ -2,11 +2,19 @@ import "@testing-library/jest-dom/vitest";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GetWorkOrderResponse } from "@irruptive/shared";
+import type {
+  GetWorkOrderResponse,
+  UpdateWorkOrderResponse,
+} from "@irruptive/shared";
 
-import { getWorkOrder, WorkOrderApiError } from "@/api/work-order";
+import {
+  getWorkOrder,
+  updateWorkOrder,
+  WorkOrderApiError,
+} from "@/api/work-order";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
 
 vi.mock("@/api/work-order", async (importOriginal) => {
@@ -14,6 +22,7 @@ vi.mock("@/api/work-order", async (importOriginal) => {
   return {
     ...actual,
     getWorkOrder: vi.fn(),
+    updateWorkOrder: vi.fn(),
   };
 });
 
@@ -32,6 +41,15 @@ const response: GetWorkOrderResponse = {
   },
 };
 
+const updatedResponse: UpdateWorkOrderResponse = {
+  data: {
+    ...response.data,
+    status: "in_progress",
+    priority: "critical",
+    updatedAt: "2026-08-15T13:00:00.000Z",
+  },
+};
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -40,6 +58,9 @@ afterEach(() => {
 function renderDetailsPage() {
   const queryClient = new QueryClient({
     defaultOptions: {
+      mutations: {
+        retry: false,
+      },
       queries: {
         retry: false,
       },
@@ -73,8 +94,12 @@ describe("WorkOrderDetailsPage", () => {
     expect(
       screen.getByText("Operator reports a grinding noise before shutdown."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Open")).toBeInTheDocument();
-    expect(screen.getByText("High")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Status" })).toHaveTextContent(
+      "Open",
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Priority" }),
+    ).toHaveTextContent("High");
     expect(screen.getByText("Mechanical")).toBeInTheDocument();
     expect(screen.getByText("Unassigned")).toBeInTheDocument();
 
@@ -100,5 +125,64 @@ describe("WorkOrderDetailsPage", () => {
     ).toHaveAttribute("href", "/work-orders");
 
     expect(getWorkOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates the status and priority", async () => {
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+    vi.mocked(updateWorkOrder).mockResolvedValue(updatedResponse);
+    renderDetailsPage();
+
+    const user = userEvent.setup();
+    const statusSelect = await screen.findByRole("combobox", {
+      name: "Status",
+    });
+    const prioritySelect = screen.getByRole("combobox", {
+      name: "Priority",
+    });
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+
+    expect(saveButton).toBeDisabled();
+
+    await user.click(statusSelect);
+    await user.click(screen.getByRole("option", { name: "In progress" }));
+    await user.click(prioritySelect);
+    await user.click(screen.getByRole("option", { name: "Critical" }));
+    await user.click(saveButton);
+
+    expect(updateWorkOrder).toHaveBeenCalledWith(response.data.id, {
+      status: "in_progress",
+      priority: "critical",
+    });
+    expect(await screen.findByText("Work order updated.")).toBeInTheDocument();
+    expect(statusSelect).toHaveTextContent("In progress");
+    expect(prioritySelect).toHaveTextContent("Critical");
+    expect(saveButton).toBeDisabled();
+  });
+
+  it("displays an update failure and preserves the selected values", async () => {
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+    vi.mocked(updateWorkOrder).mockRejectedValue(
+      new Error("Unable to update work order (500)."),
+    );
+    renderDetailsPage();
+
+    const user = userEvent.setup();
+    const statusSelect = await screen.findByRole("combobox", {
+      name: "Status",
+    });
+
+    await user.click(statusSelect);
+    await user.click(screen.getByRole("option", { name: "Blocked" }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const alert = await screen.findByRole("alert");
+
+    expect(alert).toHaveTextContent("Could not update work order");
+    expect(alert).toHaveTextContent("Unable to update work order (500).");
+    expect(statusSelect).toHaveTextContent("Blocked");
+    expect(updateWorkOrder).toHaveBeenCalledWith(response.data.id, {
+      status: "blocked",
+      priority: "high",
+    });
   });
 });
