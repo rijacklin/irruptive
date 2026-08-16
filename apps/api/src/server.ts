@@ -49,6 +49,7 @@ const app = createApp({
   commentService,
   userService,
   authHandler: toNodeHandler(auth),
+  resolveSession: (headers) => auth.api.getSession({ headers }),
   webOrigin: environment.WEB_ORIGIN,
 });
 

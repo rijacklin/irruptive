@@ -73,8 +73,6 @@ export interface GetWorkOrderResponse {
 export interface CreateWorkOrderRequest {
   title: string;
   description: string;
-  // TODO(auth): Remove when the API derives the creator from authentication.
-  createdBy: string;
   priority?: WorkOrderPriority;
   category?: string | null;
 }
@@ -106,8 +104,6 @@ export interface ListCommentsResponse {
 }
 
 export interface CreateCommentRequest {
-  // TODO(auth): Remove when derived from the authenticated user.
-  userId: string;
   body: string;
 }
 

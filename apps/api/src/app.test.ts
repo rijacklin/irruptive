@@ -11,4 +11,20 @@ describe("GET /health", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: "ok" });
   });
+
+  it("remains public when application APIs require authentication", async () => {
+    const { app } = createTestApp(null);
+
+    const healthResponse = await request(app).get("/health");
+    const apiResponse = await request(app).get("/api/work-orders");
+
+    expect(healthResponse.status).toBe(200);
+    expect(apiResponse.status).toBe(401);
+    expect(apiResponse.body).toEqual({
+      error: {
+        code: "AUTHENTICATION_REQUIRED",
+        message: "Authentication is required.",
+      },
+    });
+  });
 });

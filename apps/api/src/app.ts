@@ -10,12 +10,17 @@ import { createWorkOrderRouter } from "./routes/work-order-routes.js";
 import { createUserRouter } from "./routes/user-routes.js";
 import { notFoundHandler } from "./middleware/not-found-handler.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import {
+  requireAuthentication,
+  type SessionResolver,
+} from "./middleware/require-authentication.js";
 
 export interface AppDependencies {
   workOrderService: WorkOrderService;
   commentService: CommentService;
   userService: UserService;
   authHandler: RequestHandler;
+  resolveSession: SessionResolver;
   webOrigin: string;
 }
 
@@ -36,6 +41,8 @@ export function createApp(dependencies: AppDependencies) {
     const body: HealthResponse = { status: "ok" };
     response.json(body);
   });
+
+  app.use("/api", requireAuthentication(dependencies.resolveSession));
 
   app.use(
     "/api/work-orders",

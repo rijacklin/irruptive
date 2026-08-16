@@ -39,6 +39,10 @@ The bootstrap command reads `BOOTSTRAP_ADMIN_NAME`,
 the account only when that email does not already exist. Public signup is
 disabled; later user provisioning will be restricted to administrators.
 
+Application API routes require a Better Auth session cookie. The API derives
+work-order creators and comment authors from that session; client-supplied user
+IDs are not accepted. `GET /health` and `/api/auth/*` remain public.
+
 Start each application in a separate terminal:
 
 ```bash

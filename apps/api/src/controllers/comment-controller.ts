@@ -4,6 +4,7 @@ import type { CreateCommentRequest } from "../schemas/comment.schemas.js";
 import type { CommentService } from "../services/comment-service.js";
 import type { WorkOrderIdParams } from "../schemas/work-order.schemas.js";
 import { serializeComment } from "../serializers/comment.serializer.js";
+import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
 export function createCommentController(service: CommentService) {
   return {
@@ -15,12 +16,13 @@ export function createCommentController(service: CommentService) {
         params: WorkOrderIdParams;
         body: CreateCommentRequest;
       },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
+      const actor = getAuthenticatedActor(request);
       const input: CreateCommentInput = {
         workOrderId: params.id,
-        userId: body.userId,
+        userId: actor.id,
         body: body.body,
       };
 

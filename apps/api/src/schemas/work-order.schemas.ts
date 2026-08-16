@@ -7,9 +7,6 @@ export const createWorkOrderSchema = z
     description: z.string().trim().min(10),
     priority: z.enum(workOrderPriorities).optional(),
     category: z.string().trim().min(1).nullable().optional(),
-
-    // TODO(auth): Remove this from the request body and derive it from the authenticated user
-    createdBy: z.uuid(),
   })
   .strict();
 

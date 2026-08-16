@@ -9,6 +9,12 @@ export class ApplicationError extends Error {
   }
 }
 
+export class AuthenticationRequiredError extends ApplicationError {
+  constructor() {
+    super(401, "AUTHENTICATION_REQUIRED", "Authentication is required.");
+  }
+}
+
 export class WorkOrderNotFoundError extends ApplicationError {
   constructor(id: string) {
     super(404, "WORK_ORDER_NOT_FOUND", `Work order ${id} does not exist.`);

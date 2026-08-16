@@ -276,17 +276,12 @@ describe("WorkOrderDetailsPage", () => {
 
     const user = userEvent.setup();
     await user.type(
-      screen.getByRole("textbox", { name: "Your user ID" }),
-      `  ${response.data.createdBy}  `,
-    );
-    await user.type(
       screen.getByRole("textbox", { name: "Add a comment" }),
       `  ${addedComment.body}  `,
     );
     await user.click(screen.getByRole("button", { name: "Add comment" }));
 
     expect(createComment).toHaveBeenCalledWith(response.data.id, {
-      userId: response.data.createdBy,
       body: addedComment.body,
     });
     expect(await screen.findByText(addedComment.body)).toBeInTheDocument();

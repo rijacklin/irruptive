@@ -29,6 +29,7 @@ afterEach(async () => {
   await testApp.pool.query("DELETE FROM comments");
   await testApp.pool.query("DELETE FROM work_orders");
   await testApp.pool.query("DELETE FROM users");
+  testApp.setActor(null);
 });
 
 afterAll(async () => {
@@ -47,6 +48,8 @@ async function createUser(): Promise<string> {
     `,
     [id, "API Integration Requester", `${id}@example.com`, "requester"],
   );
+
+  testApp.setActor({ id, role: "requester" });
 
   return id;
 }
@@ -69,12 +72,12 @@ async function createWorkOrder(
   createdBy: string,
   title: string,
 ): Promise<WorkOrderResponse> {
+  testApp.setActor({ id: createdBy, role: "requester" });
   const response = await request(testApp.app)
     .post("/api/work-orders")
     .send({
       title,
       description: `${title} requires investigation by a technician.`,
-      createdBy,
     });
 
   expect(response.status).toBe(201);
@@ -90,7 +93,6 @@ describe("work-order API integration", () => {
       .send({
         title: "Conveyor intermittently stopping",
         description: "Operator reports grinding before shutdown.",
-        createdBy,
       });
 
     expect(createResponse.status).toBe(201);
@@ -251,10 +253,10 @@ describe("work-order API integration", () => {
   });
 
   it("rejects invalid input without persisting a work order", async () => {
+    testApp.setActor({ id: randomUUID(), role: "requester" });
     const response = await request(testApp.app).post("/api/work-orders").send({
       title: "x",
       description: "This description is otherwise sufficiently detailed.",
-      createdBy: randomUUID(),
     });
 
     expect(response.status).toBe(400);
@@ -278,10 +280,10 @@ describe("work-order API integration", () => {
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
 
+    testApp.setActor({ id: randomUUID(), role: "requester" });
     const response = await request(testApp.app).post("/api/work-orders").send({
       title: "Inspect unregistered equipment",
-      description: "The creator UUID does not reference an existing user.",
-      createdBy: randomUUID(),
+      description: "The authenticated user no longer exists in the database.",
     });
 
     expect(response.status).toBe(500);
@@ -311,13 +313,11 @@ describe("work-order API integration", () => {
     const firstResponse = await request(testApp.app)
       .post(`/api/work-orders/${workOrder.id}/comments`)
       .send({
-        userId: createdBy,
         body: "Bearing wear confirmed during inspection.",
       });
     const secondResponse = await request(testApp.app)
       .post(`/api/work-orders/${workOrder.id}/comments`)
       .send({
-        userId: createdBy,
         body: "Replacement bearing has been ordered.",
       });
 

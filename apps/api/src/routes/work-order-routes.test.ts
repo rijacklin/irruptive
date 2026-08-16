@@ -24,7 +24,6 @@ const validCreateBody = {
   description: "Operator reports grinding before shutdown.",
   priority: "high",
   category: "Mechanical",
-  createdBy,
 };
 
 function validationCase<Input>(
@@ -38,7 +37,7 @@ function validationCase<Input>(
 const invalidCreateCases = [
   validationCase(
     "missing title",
-    { description: validCreateBody.description, createdBy },
+    { description: validCreateBody.description },
     "title",
   ),
   validationCase(
@@ -53,26 +52,13 @@ const invalidCreateCases = [
   ),
   validationCase(
     "missing description",
-    { title: validCreateBody.title, createdBy },
+    { title: validCreateBody.title },
     "description",
   ),
   validationCase(
     "description below minimum length",
     { ...validCreateBody, description: "123456789" },
     "description",
-  ),
-  validationCase(
-    "missing creator",
-    {
-      title: validCreateBody.title,
-      description: validCreateBody.description,
-    },
-    "createdBy",
-  ),
-  validationCase(
-    "invalid creator UUID",
-    { ...validCreateBody, createdBy: "not-a-uuid" },
-    "createdBy",
   ),
   validationCase(
     "invalid priority",
@@ -143,7 +129,6 @@ describe("POST /api/work-orders", () => {
       description: workOrder.description,
       priority: workOrder.priority,
       category: workOrder.category,
-      createdBy,
     });
 
     expect(response.status).toBe(201);
@@ -171,7 +156,7 @@ describe("POST /api/work-orders", () => {
     const response = await request(app).post("/api/work-orders").send({
       title: workOrder.title,
       description: workOrder.description,
-      createdBy,
+      createdBy: "11111111-1111-4111-8111-111111111111",
       status: "closed",
     });
 

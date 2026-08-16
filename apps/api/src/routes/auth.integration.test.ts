@@ -6,7 +6,7 @@ let testApp: Awaited<ReturnType<typeof createIntegrationTestApp>>;
 let signupDisabledApp: Awaited<ReturnType<typeof createIntegrationTestApp>>;
 
 beforeAll(async () => {
-  testApp = await createIntegrationTestApp();
+  testApp = await createIntegrationTestApp({ useBetterAuthSessions: true });
   signupDisabledApp = await createIntegrationTestApp({ allowSignUp: false });
 });
 
@@ -65,6 +65,36 @@ describe("Better Auth integration", () => {
       role: "requester",
     });
     expect(sessionResponse.body.session.id).toEqual(expect.any(String));
+  });
+
+  it("protects application APIs with the Better Auth session", async () => {
+    const anonymousResponse = await request(testApp.app).get(
+      "/api/work-orders",
+    );
+
+    expect(anonymousResponse.status).toBe(401);
+    expect(anonymousResponse.body.error.code).toBe("AUTHENTICATION_REQUIRED");
+
+    const agent = request.agent(testApp.app);
+    await agent.post("/api/auth/sign-up/email").send({
+      name: "API Requester",
+      email: "api-requester@example.com",
+      password: "correct-horse-battery-staple",
+    });
+
+    const createResponse = await agent.post("/api/work-orders").send({
+      title: "Inspect authenticated conveyor",
+      description: "The signed-in requester observed intermittent vibration.",
+    });
+
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.body.data.createdBy).toEqual(expect.any(String));
+
+    const user = await testApp.pool.query<{ id: string }>(
+      "SELECT id FROM users WHERE email = $1",
+      ["api-requester@example.com"],
+    );
+    expect(createResponse.body.data.createdBy).toBe(user.rows[0]?.id);
   });
 
   it("signs in with a password and revokes the session on sign out", async () => {

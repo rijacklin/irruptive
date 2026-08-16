@@ -10,8 +10,14 @@ import {
   type WorkOrderStore,
 } from "../services/work-order-service.js";
 import { UserService, type UserListStore } from "../services/user-service.js";
+import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
 
-export function createTestApp() {
+const defaultActor: AuthorizationActor = {
+  id: "234173b3-13a5-43c8-baf7-bf06640cf7fd",
+  role: "admin",
+};
+
+export function createTestApp(actor: AuthorizationActor | null = defaultActor) {
   const store: WorkOrderStore = {
     create: vi.fn(),
     findById: vi.fn(),
@@ -37,6 +43,8 @@ export function createTestApp() {
     authHandler: (_request, response) => {
       response.status(404).end();
     },
+    resolveSession: async () =>
+      actor === null ? null : { user: { id: actor.id, role: actor.role } },
     webOrigin: "http://localhost:5173",
   });
 

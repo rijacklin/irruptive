@@ -12,6 +12,7 @@ import { WorkOrderService } from "../services/work-order-service.js";
 import { CommentService } from "../services/comment-service.js";
 import { UserService } from "../services/user-service.js";
 import { createAuth } from "../auth.js";
+import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
 
 loadDotenv({
   path: new URL("../../../../.env", import.meta.url),
@@ -19,7 +20,7 @@ loadDotenv({
 });
 
 export async function createIntegrationTestApp(
-  options: { allowSignUp?: boolean } = {},
+  options: { allowSignUp?: boolean; useBetterAuthSessions?: boolean } = {},
 ) {
   const connectionString = process.env.TEST_DATABASE_URL;
 
@@ -60,13 +61,25 @@ export async function createIntegrationTestApp(
     trustedOrigins: ["http://localhost:5173"],
     allowSignUp: options.allowSignUp ?? true,
   });
+  let actor: AuthorizationActor | null = null;
   const app = createApp({
     workOrderService,
     commentService,
     userService,
     authHandler: toNodeHandler(auth),
+    resolveSession: options.useBetterAuthSessions
+      ? (headers) => auth.api.getSession({ headers })
+      : async () =>
+          actor === null ? null : { user: { id: actor.id, role: actor.role } },
     webOrigin: "http://localhost:5173",
   });
 
-  return { app, pool, auth };
+  return {
+    app,
+    pool,
+    auth,
+    setActor(nextActor: AuthorizationActor | null) {
+      actor = nextActor;
+    },
+  };
 }

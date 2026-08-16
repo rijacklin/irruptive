@@ -11,18 +11,20 @@ import type {
   UpdateWorkOrderRequest,
   WorkOrderIdParams,
 } from "../schemas/work-order.schemas.js";
+import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
 export function createWorkOrderController(service: WorkOrderService) {
   return {
     create: async (
       { body }: { body: CreateWorkOrderRequest },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
+      const actor = getAuthenticatedActor(request);
       const input: CreateWorkOrderInput = {
         title: body.title,
         description: body.description,
-        createdBy: body.createdBy,
+        createdBy: actor.id,
         ...(body.priority !== undefined ? { priority: body.priority } : {}),
         ...(body.category !== undefined ? { category: body.category } : {}),
       };
