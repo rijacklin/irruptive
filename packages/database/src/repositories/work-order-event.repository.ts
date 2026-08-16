@@ -1,14 +1,12 @@
 import type { Pool, PoolClient } from "pg";
+import {
+  workOrderActivityEventTypes,
+  type WorkOrderActivityEventType,
+} from "@irruptive/shared";
 
-export const workOrderEventTypes = [
-  "work_order_created",
-  "status_changed",
-  "priority_changed",
-  "category_changed",
-  "assignment_changed",
-] as const;
+export const workOrderEventTypes = workOrderActivityEventTypes;
 
-export type WorkOrderEventType = (typeof workOrderEventTypes)[number];
+export type WorkOrderEventType = WorkOrderActivityEventType;
 
 export interface WorkOrderEvent {
   id: string;

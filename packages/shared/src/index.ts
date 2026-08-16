@@ -92,3 +92,34 @@ export interface CreateCommentRequest {
 export interface CreateCommentResponse {
   data: CommentResponse;
 }
+
+export const workOrderActivityEventTypes = [
+  "work_order_created",
+  "status_changed",
+  "priority_changed",
+  "category_changed",
+  "assignment_changed",
+] as const;
+
+export type WorkOrderActivityEventType =
+  (typeof workOrderActivityEventTypes)[number];
+
+export type WorkOrderActivityItemResponse =
+  | {
+      kind: "event";
+      id: string;
+      eventType: WorkOrderActivityEventType;
+      eventData: Record<string, unknown>;
+      createdAt: string;
+    }
+  | {
+      kind: "comment";
+      id: string;
+      userId: string;
+      body: string;
+      createdAt: string;
+    };
+
+export interface ListWorkOrderActivityResponse {
+  data: WorkOrderActivityItemResponse[];
+}

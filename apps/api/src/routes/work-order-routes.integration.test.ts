@@ -350,5 +350,28 @@ describe("work-order API integration", () => {
       [workOrder.id],
     );
     expect(persisted.rows).toEqual([{ count: "2" }]);
+
+    const activityResponse = await request(testApp.app).get(
+      `/api/work-orders/${workOrder.id}/activity`,
+    );
+
+    expect(activityResponse.status).toBe(200);
+    expect(activityResponse.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "event",
+          eventType: "work_order_created",
+        }),
+        expect.objectContaining({
+          kind: "comment",
+          body: "Bearing wear confirmed during inspection.",
+        }),
+        expect.objectContaining({
+          kind: "comment",
+          body: "Replacement bearing has been ordered.",
+        }),
+      ]),
+    );
+    expect(activityResponse.body.data).toHaveLength(3);
   });
 });

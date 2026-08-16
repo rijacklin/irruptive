@@ -8,6 +8,10 @@ import {
   WorkOrderService,
   type WorkOrderStore,
 } from "../services/work-order-service.js";
+import {
+  WorkOrderActivityService,
+  type ActivityEventStore,
+} from "../services/work-order-activity-service.js";
 
 export function createTestApp() {
   const store: WorkOrderStore = {
@@ -23,10 +27,19 @@ export function createTestApp() {
     listByWorkOrderId: vi.fn(),
   };
 
+  const eventStore: ActivityEventStore = {
+    listByWorkOrderId: vi.fn(),
+  };
+
   const app = createApp({
     workOrderService: new WorkOrderService(store),
     commentService: new CommentService(commentStore, store),
+    workOrderActivityService: new WorkOrderActivityService(
+      store,
+      commentStore,
+      eventStore,
+    ),
   });
 
-  return { app, store, commentStore };
+  return { app, store, commentStore, eventStore };
 }

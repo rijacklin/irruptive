@@ -3,11 +3,13 @@ import {
   checkDatabaseConnection,
   CommentRepository,
   createDatabasePool,
+  WorkOrderEventRepository,
   WorkOrderRepository,
 } from "@irruptive/database";
 import { createApp } from "../app.js";
 import { WorkOrderService } from "../services/work-order-service.js";
 import { CommentService } from "../services/comment-service.js";
+import { WorkOrderActivityService } from "../services/work-order-activity-service.js";
 
 loadDotenv({
   path: new URL("../../../../.env", import.meta.url),
@@ -38,12 +40,22 @@ export async function createIntegrationTestApp() {
 
   const workOrderRepository = new WorkOrderRepository(pool);
   const commentRepository = new CommentRepository(pool);
+  const workOrderEventRepository = new WorkOrderEventRepository(pool);
   const workOrderService = new WorkOrderService(workOrderRepository);
   const commentService = new CommentService(
     commentRepository,
     workOrderRepository,
   );
-  const app = createApp({ workOrderService, commentService });
+  const workOrderActivityService = new WorkOrderActivityService(
+    workOrderRepository,
+    commentRepository,
+    workOrderEventRepository,
+  );
+  const app = createApp({
+    workOrderService,
+    commentService,
+    workOrderActivityService,
+  });
 
   return { app, pool };
 }
