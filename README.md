@@ -121,3 +121,12 @@ The API currently supports:
 - `GET /api/work-orders/:id`
 - `PATCH /api/work-orders/:id`
 - `DELETE /api/work-orders/:id`
+
+## Authorization policy
+
+The API contains a server-side work-order authorization policy covering
+ownership, assignment, role-based updates, commenting, and deletion. The policy
+is intentionally not enforced by routes yet: authentication is a Phase 4 task,
+and request body fields or ad hoc headers are not trusted identities. Phase 4
+middleware will supply a verified actor before application services invoke this
+policy.
