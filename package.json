@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
+    "auth:bootstrap-admin": "npm run auth:bootstrap-admin --workspace @irruptive/api",
     "db:create-migration": "npm run migration:create --workspace @irruptive/database --",
     "db:migrate": "npm run migration:up --workspace @irruptive/database",
     "db:rollback": "npm run migration:down --workspace @irruptive/database",

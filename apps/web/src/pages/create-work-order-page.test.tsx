@@ -78,11 +78,6 @@ async function completeRequiredFields() {
     screen.getByRole("textbox", { name: "Description" }),
     response.data.description,
   );
-  await user.type(
-    screen.getByRole("textbox", { name: "Creator user ID" }),
-    createdBy,
-  );
-
   return user;
 }
 
@@ -111,7 +106,6 @@ describe("CreateWorkOrderPage", () => {
       description: response.data.description,
       priority: "high",
       category: "Mechanical",
-      createdBy,
     });
   });
 

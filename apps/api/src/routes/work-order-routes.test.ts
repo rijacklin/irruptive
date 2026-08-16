@@ -24,7 +24,6 @@ const validCreateBody = {
   description: "Operator reports grinding before shutdown.",
   priority: "high",
   category: "Mechanical",
-  createdBy,
 };
 
 function validationCase<Input>(
@@ -38,7 +37,7 @@ function validationCase<Input>(
 const invalidCreateCases = [
   validationCase(
     "missing title",
-    { description: validCreateBody.description, createdBy },
+    { description: validCreateBody.description },
     "title",
   ),
   validationCase(
@@ -53,26 +52,13 @@ const invalidCreateCases = [
   ),
   validationCase(
     "missing description",
-    { title: validCreateBody.title, createdBy },
+    { title: validCreateBody.title },
     "description",
   ),
   validationCase(
     "description below minimum length",
     { ...validCreateBody, description: "123456789" },
     "description",
-  ),
-  validationCase(
-    "missing creator",
-    {
-      title: validCreateBody.title,
-      description: validCreateBody.description,
-    },
-    "createdBy",
-  ),
-  validationCase(
-    "invalid creator UUID",
-    { ...validCreateBody, createdBy: "not-a-uuid" },
-    "createdBy",
   ),
   validationCase(
     "invalid priority",
@@ -143,7 +129,6 @@ describe("POST /api/work-orders", () => {
       description: workOrder.description,
       priority: workOrder.priority,
       category: workOrder.category,
-      createdBy,
     });
 
     expect(response.status).toBe(201);
@@ -171,7 +156,7 @@ describe("POST /api/work-orders", () => {
     const response = await request(app).post("/api/work-orders").send({
       title: workOrder.title,
       description: workOrder.description,
-      createdBy,
+      createdBy: "11111111-1111-4111-8111-111111111111",
       status: "closed",
     });
 
@@ -305,6 +290,7 @@ describe("PATCH /api/work-orders/:id", () => {
       updatedAt: new Date("2026-08-13T13:00:00.000Z"),
     } satisfies WorkOrder;
 
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(store.update).mockResolvedValue(updated);
 
     const response = await request(app)
@@ -339,6 +325,47 @@ describe("PATCH /api/work-orders/:id", () => {
     expect(store.update).not.toHaveBeenCalled();
   });
 
+  it("assigns an eligible technician", async () => {
+    const { app, store, userStore } = createTestApp();
+    const assignedTo = "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc";
+
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
+    vi.mocked(userStore.findAssignableById).mockResolvedValue({
+      id: assignedTo,
+      name: "Alex Technician",
+      email: "alex@example.com",
+      role: "technician",
+      createdAt: new Date("2026-08-13T12:00:00.000Z"),
+    });
+    vi.mocked(store.update).mockResolvedValue({
+      ...workOrder,
+      assignedTo,
+    });
+
+    const response = await request(app)
+      .patch(`/api/work-orders/${workOrderId}`)
+      .send({ assignedTo });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.assignedTo).toBe(assignedTo);
+    expect(store.update).toHaveBeenCalledWith(workOrderId, { assignedTo });
+  });
+
+  it("rejects an ineligible assignee", async () => {
+    const { app, store, userStore } = createTestApp();
+    const assignedTo = "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc";
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
+    vi.mocked(userStore.findAssignableById).mockResolvedValue(null);
+
+    const response = await request(app)
+      .patch(`/api/work-orders/${workOrderId}`)
+      .send({ assignedTo });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("ASSIGNEE_NOT_ELIGIBLE");
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
   it("rejects unsupported fields", async () => {
     const { app, store } = createTestApp();
 
@@ -352,7 +379,7 @@ describe("PATCH /api/work-orders/:id", () => {
 
   it("returns 404 when updating a missing work order", async () => {
     const { app, store } = createTestApp();
-    vi.mocked(store.update).mockResolvedValue(null);
+    vi.mocked(store.findById).mockResolvedValue(null);
 
     const response = await request(app)
       .patch(`/api/work-orders/${workOrderId}`)
@@ -379,6 +406,7 @@ describe("PATCH /api/work-orders/:id", () => {
   it.for(clearFieldCases)("accepts clearing $name", async ({ body }) => {
     const { app, store } = createTestApp();
 
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(store.update).mockResolvedValue({
       ...workOrder,
       ...body,
@@ -396,6 +424,7 @@ describe("PATCH /api/work-orders/:id", () => {
 describe("DELETE /api/work-orders/:id", () => {
   it("deletes an existing work order", async () => {
     const { app, store } = createTestApp();
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(store.delete).mockResolvedValue(true);
 
     const response = await request(app).delete(
@@ -409,7 +438,7 @@ describe("DELETE /api/work-orders/:id", () => {
 
   it("returns 404 when deleting a missing work order", async () => {
     const { app, store } = createTestApp();
-    vi.mocked(store.delete).mockResolvedValue(false);
+    vi.mocked(store.findById).mockResolvedValue(null);
 
     const response = await request(app).delete(
       `/api/work-orders/${workOrderId}`,

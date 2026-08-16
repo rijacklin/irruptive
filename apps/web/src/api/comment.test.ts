@@ -38,6 +38,7 @@ describe("comment API", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(`http://localhost:3000/api/work-orders/${workOrderId}/comments`),
       {
+        credentials: "include",
         headers: { Accept: "application/json" },
         signal,
       },
@@ -55,17 +56,18 @@ describe("comment API", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      createComment(workOrderId, { userId, body: comment.body }),
+      createComment(workOrderId, { body: comment.body }),
     ).resolves.toEqual(responseBody);
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(`http://localhost:3000/api/work-orders/${workOrderId}/comments`),
       {
         method: "POST",
+        credentials: "include",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId, body: comment.body }),
+        body: JSON.stringify({ body: comment.body }),
       },
     );
   });
@@ -79,7 +81,7 @@ describe("comment API", () => {
     );
 
     await expect(
-      createComment(workOrderId, { userId, body: comment.body }),
+      createComment(workOrderId, { body: comment.body }),
     ).rejects.toEqual(
       expect.objectContaining<Partial<CommentApiError>>({
         name: "CommentApiError",

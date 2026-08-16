@@ -9,7 +9,10 @@ import type {
   CommentResponse,
   GetWorkOrderResponse,
   ListCommentsResponse,
+  ListUsersResponse,
+  ListWorkOrderActivityResponse,
   UpdateWorkOrderResponse,
+  UserResponse,
 } from "@irruptive/shared";
 
 import {
@@ -18,7 +21,16 @@ import {
   WorkOrderApiError,
 } from "@/api/work-order";
 import { createComment, listComments } from "@/api/comment";
+import { listUsers } from "@/api/user";
+import { authClient } from "@/lib/auth-client";
+import { listWorkOrderActivity } from "@/api/work-order-activity";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
+
+vi.mock("@/lib/auth-client", () => ({
+  authClient: {
+    useSession: vi.fn(),
+  },
+}));
 
 vi.mock("@/api/work-order", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/api/work-order")>();
@@ -35,6 +47,31 @@ vi.mock("@/api/comment", async (importOriginal) => {
     ...actual,
     createComment: vi.fn(),
     listComments: vi.fn(),
+  };
+});
+
+vi.mock("@/api/user", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api/user")>();
+  return {
+    ...actual,
+    listUsers: vi.fn(),
+  };
+});
+
+const technician: UserResponse = {
+  id: "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc",
+  name: "Alex Technician",
+  email: "alex@example.com",
+  role: "technician",
+  createdAt: "2026-08-14T11:00:00.000Z",
+};
+
+vi.mock("@/api/work-order-activity", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/api/work-order-activity")>();
+  return {
+    ...actual,
+    listWorkOrderActivity: vi.fn(),
   };
 });
 
@@ -72,7 +109,49 @@ const existingComment: CommentResponse = {
 
 beforeEach(() => {
   const comments: ListCommentsResponse = { data: [] };
+  const technicians: ListUsersResponse = { data: [technician] };
   vi.mocked(listComments).mockResolvedValue(comments);
+  vi.mocked(listUsers).mockResolvedValue(technicians);
+  vi.mocked(authClient.useSession).mockReturnValue({
+    data: {
+      user: {
+        id: "55555555-5555-4555-8555-555555555555",
+        name: "Sam Supervisor",
+        email: "sam@example.com",
+        emailVerified: true,
+        image: null,
+        createdAt: new Date("2026-08-16T12:00:00.000Z"),
+        updatedAt: new Date("2026-08-16T12:00:00.000Z"),
+        role: "supervisor",
+      },
+      session: {
+        id: "session-id",
+        userId: "55555555-5555-4555-8555-555555555555",
+        token: "session-token",
+        expiresAt: new Date("2026-08-23T12:00:00.000Z"),
+        createdAt: new Date("2026-08-16T12:00:00.000Z"),
+        updatedAt: new Date("2026-08-16T12:00:00.000Z"),
+        ipAddress: null,
+        userAgent: null,
+      },
+    },
+    isPending: false,
+    isRefetching: false,
+    error: null,
+    refetch: vi.fn(),
+  });
+  const activity: ListWorkOrderActivityResponse = {
+    data: [
+      {
+        kind: "event",
+        id: "d37786d8-54f1-43f0-8604-82c51d017178",
+        eventType: "work_order_created",
+        eventData: { status: "open" },
+        createdAt: response.data.createdAt,
+      },
+    ],
+  };
+  vi.mocked(listWorkOrderActivity).mockResolvedValue(activity);
 });
 
 afterEach(() => {
@@ -126,7 +205,13 @@ describe("WorkOrderDetailsPage", () => {
       screen.getByRole("combobox", { name: "Priority" }),
     ).toHaveTextContent("High");
     expect(screen.getByText("Mechanical")).toBeInTheDocument();
-    expect(screen.getByText("Unassigned")).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Assignee" }),
+    ).toHaveTextContent("Unassigned");
+    expect(
+      screen.getByRole("heading", { name: "Activity" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Work order created")).toBeInTheDocument();
 
     expect(getWorkOrder).toHaveBeenCalledWith(
       response.data.id,
@@ -150,6 +235,31 @@ describe("WorkOrderDetailsPage", () => {
     ).toHaveAttribute("href", "/work-orders");
 
     expect(getWorkOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides management controls from requesters", async () => {
+    vi.mocked(authClient.useSession).mockReturnValue({
+      ...vi.mocked(authClient.useSession)(),
+      data: {
+        ...vi.mocked(authClient.useSession)().data!,
+        user: {
+          ...vi.mocked(authClient.useSession)().data!.user,
+          id: response.data.createdBy,
+          role: "requester",
+        },
+      },
+    });
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+
+    renderDetailsPage();
+
+    expect(
+      await screen.findByRole("heading", { name: response.data.title }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Update work order" }),
+    ).not.toBeInTheDocument();
+    expect(listUsers).not.toHaveBeenCalled();
   });
 
   it("updates the status and priority", async () => {
@@ -207,8 +317,34 @@ describe("WorkOrderDetailsPage", () => {
     expect(statusSelect).toHaveTextContent("Blocked");
     expect(updateWorkOrder).toHaveBeenCalledWith(response.data.id, {
       status: "blocked",
-      priority: "high",
     });
+  });
+
+  it("assigns a technician", async () => {
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+    vi.mocked(updateWorkOrder).mockResolvedValue({
+      data: {
+        ...response.data,
+        assignedTo: technician.id,
+        updatedAt: "2026-08-15T13:00:00.000Z",
+      },
+    });
+    renderDetailsPage();
+
+    const user = userEvent.setup();
+    const assigneeSelect = await screen.findByRole("combobox", {
+      name: "Assignee",
+    });
+
+    await user.click(assigneeSelect);
+    await user.click(screen.getByRole("option", { name: technician.name }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(updateWorkOrder).toHaveBeenCalledWith(response.data.id, {
+      assignedTo: technician.id,
+    });
+    expect(await screen.findByText("Work order updated.")).toBeInTheDocument();
+    expect(assigneeSelect).toHaveTextContent(technician.name);
   });
 
   it("renders comments and adds a normalized comment", async () => {
@@ -227,17 +363,12 @@ describe("WorkOrderDetailsPage", () => {
 
     const user = userEvent.setup();
     await user.type(
-      screen.getByRole("textbox", { name: "Your user ID" }),
-      `  ${response.data.createdBy}  `,
-    );
-    await user.type(
       screen.getByRole("textbox", { name: "Add a comment" }),
       `  ${addedComment.body}  `,
     );
     await user.click(screen.getByRole("button", { name: "Add comment" }));
 
     expect(createComment).toHaveBeenCalledWith(response.data.id, {
-      userId: response.data.createdBy,
       body: addedComment.body,
     });
     expect(await screen.findByText(addedComment.body)).toBeInTheDocument();

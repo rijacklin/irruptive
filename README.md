@@ -25,6 +25,30 @@ Start PostgreSQL, wait for it to become healthy, and apply the existing database
 docker compose up -d postgres
 ```
 
+Generate a strong Better Auth secret and place it in `.env`. The value must be
+at least 32 characters and must not be committed. Then create the initial local
+administrator after applying migrations:
+
+```bash
+npm run db:migrate
+npm run auth:bootstrap-admin
+```
+
+The bootstrap command reads `BOOTSTRAP_ADMIN_NAME`,
+`BOOTSTRAP_ADMIN_EMAIL`, and `BOOTSTRAP_ADMIN_PASSWORD` from `.env`. It creates
+the account only when that email does not already exist. Public signup is
+disabled; later user provisioning will be restricted to administrators.
+
+Application API routes require a Better Auth session cookie. The API derives
+work-order creators and comment authors from that session; client-supplied user
+IDs are not accepted. `GET /health` and `/api/auth/*` remain public.
+
+Role permissions are enforced by backend services. Requesters see work orders
+they created, technicians see work assigned to them, and supervisors and
+administrators have organization-wide visibility. Supervisors can assign and
+reprioritize work; assigned technicians can progress work through technician
+statuses; only administrators can delete work orders.
+
 Start each application in a separate terminal:
 
 ```bash
@@ -46,6 +70,11 @@ Expected response:
 ```
 
 The API verifies its PostgreSQL connection before it begins listening. If PostgreSQL is unavailable or `DATABASE_URL` is invalid, API startup fails instead of reporting a misleading healthy state.
+
+Authentication is managed by Better Auth using email/password credentials and
+database-backed cookie sessions. Passwords are hashed by Better Auth and session
+cookies are HttpOnly. `WEB_ORIGIN` controls credentialed CORS access, while
+`BETTER_AUTH_URL` is the public URL of the API authentication endpoints.
 
 ### PostgreSQL port conflicts
 
@@ -121,3 +150,12 @@ The API currently supports:
 - `GET /api/work-orders/:id`
 - `PATCH /api/work-orders/:id`
 - `DELETE /api/work-orders/:id`
+
+## Authorization policy
+
+The API contains a server-side work-order authorization policy covering
+ownership, assignment, role-based updates, commenting, and deletion. The policy
+is intentionally not enforced by routes yet: authentication is a Phase 4 task,
+and request body fields or ad hoc headers are not trusted identities. Phase 4
+middleware will supply a verified actor before application services invoke this
+policy.

@@ -15,6 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUpdateWorkOrder } from "@/hooks/use-update-work-order";
+import { useUsers } from "@/hooks/use-users";
+
+const unassignedValue = "unassigned";
 
 const statusLabels: Record<WorkOrderStatus, string> = {
   open: "Open",
@@ -36,23 +39,34 @@ interface WorkOrderUpdateFormProps {
   id: string;
   status: WorkOrderStatus;
   priority: WorkOrderPriority;
+  assignedTo: string | null;
+  mode: "manage" | "technician";
 }
 
 export function WorkOrderUpdateForm({
   id,
   status: savedStatus,
   priority: savedPriority,
+  assignedTo: savedAssignedTo,
+  mode,
 }: WorkOrderUpdateFormProps) {
   const updateWorkOrderMutation = useUpdateWorkOrder(id);
+  const canManage = mode === "manage";
+  const techniciansQuery = useUsers("technician", canManage);
   const [status, setStatus] = useState(savedStatus);
   const [priority, setPriority] = useState(savedPriority);
+  const [assignedTo, setAssignedTo] = useState(savedAssignedTo);
 
   useEffect(() => {
     setStatus(savedStatus);
     setPriority(savedPriority);
-  }, [savedPriority, savedStatus]);
+    setAssignedTo(savedAssignedTo);
+  }, [savedAssignedTo, savedPriority, savedStatus]);
 
-  const hasChanges = status !== savedStatus || priority !== savedPriority;
+  const hasChanges =
+    status !== savedStatus ||
+    (canManage && priority !== savedPriority) ||
+    (canManage && assignedTo !== savedAssignedTo);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +75,11 @@ export function WorkOrderUpdateForm({
       return;
     }
 
-    updateWorkOrderMutation.mutate({ status, priority });
+    updateWorkOrderMutation.mutate({
+      ...(status !== savedStatus ? { status } : {}),
+      ...(canManage && priority !== savedPriority ? { priority } : {}),
+      ...(canManage && assignedTo !== savedAssignedTo ? { assignedTo } : {}),
+    });
   }
 
   function handleStatusChange(value: WorkOrderStatus | null) {
@@ -78,6 +96,13 @@ export function WorkOrderUpdateForm({
     }
   }
 
+  function handleAssigneeChange(value: string | null) {
+    if (value !== null) {
+      updateWorkOrderMutation.reset();
+      setAssignedTo(value === unassignedValue ? null : value);
+    }
+  }
+
   return (
     <section className="rounded-lg border p-5" aria-labelledby="update-heading">
       <h2 id="update-heading" className="text-xl font-semibold">
@@ -85,7 +110,7 @@ export function WorkOrderUpdateForm({
       </h2>
 
       <form className="mt-4 flex flex-col gap-4" onSubmit={handleSubmit}>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium" htmlFor="work-order-status">
               Status
@@ -95,7 +120,10 @@ export function WorkOrderUpdateForm({
                 <SelectValue>{statusLabels[status]}</SelectValue>
               </SelectTrigger>
               <SelectContent align="start">
-                {workOrderStatuses.map((value) => (
+                {(canManage
+                  ? workOrderStatuses
+                  : (["in_progress", "blocked", "resolved"] as const)
+                ).map((value) => (
                   <SelectItem key={value} value={value}>
                     {statusLabels[value]}
                   </SelectItem>
@@ -104,26 +132,69 @@ export function WorkOrderUpdateForm({
             </Select>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label
-              className="text-sm font-medium"
-              htmlFor="work-order-priority"
-            >
-              Priority
-            </label>
-            <Select value={priority} onValueChange={handlePriorityChange}>
-              <SelectTrigger id="work-order-priority" className="w-full">
-                <SelectValue>{priorityLabels[priority]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent align="start">
-                {workOrderPriorities.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {priorityLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {canManage ? (
+            <div className="flex flex-col gap-2">
+              <label
+                className="text-sm font-medium"
+                htmlFor="work-order-priority"
+              >
+                Priority
+              </label>
+              <Select value={priority} onValueChange={handlePriorityChange}>
+                <SelectTrigger id="work-order-priority" className="w-full">
+                  <SelectValue>{priorityLabels[priority]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent align="start">
+                  {workOrderPriorities.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {priorityLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {canManage ? (
+            <div className="flex flex-col gap-2">
+              <label
+                className="text-sm font-medium"
+                htmlFor="work-order-assignee"
+              >
+                Assignee
+              </label>
+              <Select
+                value={assignedTo ?? unassignedValue}
+                onValueChange={handleAssigneeChange}
+                disabled={
+                  techniciansQuery.isPending || techniciansQuery.isError
+                }
+              >
+                <SelectTrigger id="work-order-assignee" className="w-full">
+                  <SelectValue>
+                    {assignedTo === null
+                      ? "Unassigned"
+                      : (techniciansQuery.data?.data.find(
+                          (technician) => technician.id === assignedTo,
+                        )?.name ?? "Assigned user")}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent align="start">
+                  <SelectItem value={unassignedValue}>Unassigned</SelectItem>
+                  {techniciansQuery.data?.data.map((technician) => (
+                    <SelectItem key={technician.id} value={technician.id}>
+                      {technician.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {techniciansQuery.isError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  Unable to load technicians.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {updateWorkOrderMutation.isError ? (

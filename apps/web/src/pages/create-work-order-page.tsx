@@ -21,9 +21,6 @@ const priorityLabels: Record<WorkOrderPriority, string> = {
   critical: "Critical",
 };
 
-const uuidPattern =
-  "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}";
-
 export function CreateWorkOrderPage() {
   const navigate = useNavigate();
   const createWorkOrderMutation = useCreateWorkOrder();
@@ -31,7 +28,6 @@ export function CreateWorkOrderPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<WorkOrderPriority>("medium");
   const [category, setCategory] = useState("");
-  const [createdBy, setCreatedBy] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +43,6 @@ export function CreateWorkOrderPage() {
         title: title.trim(),
         description: description.trim(),
         priority,
-        createdBy: createdBy.trim(),
         ...(normalizedCategory === "" ? {} : { category: normalizedCategory }),
       },
       {
@@ -163,28 +158,6 @@ export function CreateWorkOrderPage() {
               placeholder="Mechanical"
             />
           </div>
-        </div>
-
-        <div className="flex flex-col gap-2 rounded-md border border-dashed p-4">
-          <label className="text-sm font-medium" htmlFor="created-by">
-            Creator user ID
-          </label>
-          <Input
-            id="created-by"
-            name="createdBy"
-            value={createdBy}
-            onChange={(event) => setCreatedBy(event.target.value)}
-            pattern={uuidPattern}
-            required
-            autoComplete="off"
-            aria-describedby="created-by-help"
-            placeholder="00000000-0000-4000-8000-000000000000"
-          />
-          <p id="created-by-help" className="text-xs text-muted-foreground">
-            Temporary development field. Authentication will provide this value
-            automatically in Phase 4; enter the UUID of an existing user for
-            now.
-          </p>
         </div>
 
         {createWorkOrderMutation.isError ? (

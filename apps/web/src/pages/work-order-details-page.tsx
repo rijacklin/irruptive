@@ -7,7 +7,9 @@ import {
 } from "@/components/work-orders/work-order-badges";
 import { WorkOrderUpdateForm } from "@/components/work-orders/work-order-update-form";
 import { WorkOrderComments } from "@/components/work-orders/work-order-comments";
+import { WorkOrderActivityTimeline } from "@/components/work-orders/work-order-activity-timeline";
 import { useWorkOrder } from "@/hooks/use-work-order";
+import { authClient } from "@/lib/auth-client";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
@@ -18,6 +20,7 @@ export function WorkOrderDetailsPage() {
   const { id = "" } = useParams();
   const workOrderQuery = useWorkOrder(id);
   const workOrder = workOrderQuery.data?.data;
+  const session = authClient.useSession();
 
   if (workOrderQuery.isPending) {
     return (
@@ -69,6 +72,15 @@ export function WorkOrderDetailsPage() {
     );
   }
 
+  const updateMode =
+    session.data?.user.role === "supervisor" ||
+    session.data?.user.role === "admin"
+      ? "manage"
+      : session.data?.user.role === "technician" &&
+          session.data.user.id === workOrder.assignedTo
+        ? "technician"
+        : null;
+
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4">
@@ -96,11 +108,15 @@ export function WorkOrderDetailsPage() {
         </div>
       </header>
 
-      <WorkOrderUpdateForm
-        id={workOrder.id}
-        status={workOrder.status}
-        priority={workOrder.priority}
-      />
+      {updateMode !== null ? (
+        <WorkOrderUpdateForm
+          id={workOrder.id}
+          status={workOrder.status}
+          priority={workOrder.priority}
+          assignedTo={workOrder.assignedTo}
+          mode={updateMode}
+        />
+      ) : null}
 
       <section
         className="rounded-lg border p-5"
@@ -159,6 +175,8 @@ export function WorkOrderDetailsPage() {
           </div>
         </dl>
       </section>
+
+      <WorkOrderActivityTimeline workOrderId={workOrder.id} />
 
       <WorkOrderComments workOrderId={workOrder.id} />
     </main>

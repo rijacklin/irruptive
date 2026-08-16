@@ -40,7 +40,6 @@ describe("POST /api/work-orders/:id/comments", () => {
     const response = await request(app)
       .post(`/api/work-orders/${workOrderId}/comments`)
       .send({
-        userId,
         body: `  ${comment.body}  `,
       });
 
@@ -62,18 +61,18 @@ describe("POST /api/work-orders/:id/comments", () => {
     {
       name: "a malformed work-order id",
       id: "not-a-uuid",
-      body: { userId, body: "Valid body" },
+      body: { body: "Valid body" },
     },
     {
-      name: "a malformed user id",
+      name: "a spoofed user id",
       id: workOrderId,
-      body: { userId: "not-a-uuid", body: "Valid body" },
+      body: { userId, body: "Valid body" },
     },
-    { name: "a blank body", id: workOrderId, body: { userId, body: "   " } },
+    { name: "a blank body", id: workOrderId, body: { body: "   " } },
     {
       name: "an unknown property",
       id: workOrderId,
-      body: { userId, body: "Valid body", workOrderId },
+      body: { body: "Valid body", workOrderId },
     },
   ])("rejects $name", async ({ id, body }) => {
     const { app, store, commentStore } = createTestApp();
@@ -93,7 +92,7 @@ describe("POST /api/work-orders/:id/comments", () => {
 
     const response = await request(app)
       .post(`/api/work-orders/${workOrderId}/comments`)
-      .send({ userId, body: comment.body });
+      .send({ body: comment.body });
 
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe("WORK_ORDER_NOT_FOUND");

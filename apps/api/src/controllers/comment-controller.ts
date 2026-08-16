@@ -4,6 +4,7 @@ import type { CreateCommentRequest } from "../schemas/comment.schemas.js";
 import type { CommentService } from "../services/comment-service.js";
 import type { WorkOrderIdParams } from "../schemas/work-order.schemas.js";
 import { serializeComment } from "../serializers/comment.serializer.js";
+import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
 export function createCommentController(service: CommentService) {
   return {
@@ -15,16 +16,16 @@ export function createCommentController(service: CommentService) {
         params: WorkOrderIdParams;
         body: CreateCommentRequest;
       },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
-      const input: CreateCommentInput = {
+      const actor = getAuthenticatedActor(request);
+      const input: Omit<CreateCommentInput, "userId"> = {
         workOrderId: params.id,
-        userId: body.userId,
         body: body.body,
       };
 
-      const comment = await service.create(input);
+      const comment = await service.create(actor, input);
 
       response.status(201).json({
         data: serializeComment(comment),
@@ -33,10 +34,13 @@ export function createCommentController(service: CommentService) {
 
     list: async (
       { params }: { params: WorkOrderIdParams },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
-      const comments = await service.list(params.id);
+      const comments = await service.list(
+        getAuthenticatedActor(request),
+        params.id,
+      );
 
       response.json({
         data: comments.map(serializeComment),

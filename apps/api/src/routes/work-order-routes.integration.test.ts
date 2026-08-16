@@ -29,6 +29,7 @@ afterEach(async () => {
   await testApp.pool.query("DELETE FROM comments");
   await testApp.pool.query("DELETE FROM work_orders");
   await testApp.pool.query("DELETE FROM users");
+  testApp.setActor(null);
 });
 
 afterAll(async () => {
@@ -48,6 +49,22 @@ async function createUser(): Promise<string> {
     [id, "API Integration Requester", `${id}@example.com`, "requester"],
   );
 
+  testApp.setActor({ id, role: "requester" });
+
+  return id;
+}
+
+async function createTechnician(): Promise<string> {
+  const id = randomUUID();
+
+  await testApp.pool.query(
+    `
+      INSERT INTO users (id, name, email, role)
+      VALUES ($1, $2, $3, 'technician')
+    `,
+    [id, "API Integration Technician", `${id}@example.com`],
+  );
+
   return id;
 }
 
@@ -55,12 +72,12 @@ async function createWorkOrder(
   createdBy: string,
   title: string,
 ): Promise<WorkOrderResponse> {
+  testApp.setActor({ id: createdBy, role: "requester" });
   const response = await request(testApp.app)
     .post("/api/work-orders")
     .send({
       title,
       description: `${title} requires investigation by a technician.`,
-      createdBy,
     });
 
   expect(response.status).toBe(201);
@@ -76,7 +93,6 @@ describe("work-order API integration", () => {
       .send({
         title: "Conveyor intermittently stopping",
         description: "Operator reports grinding before shutdown.",
-        createdBy,
       });
 
     expect(createResponse.status).toBe(201);
@@ -107,6 +123,28 @@ describe("work-order API integration", () => {
     );
 
     expect(persisted.rows).toEqual([{ id: workOrderId }]);
+
+    const events = await testApp.pool.query<{
+      event_type: string;
+      event_data: Record<string, unknown>;
+    }>(
+      `
+        SELECT event_type, event_data
+        FROM work_order_events
+        WHERE work_order_id = $1
+      `,
+      [workOrderId],
+    );
+
+    expect(events.rows).toEqual([
+      expect.objectContaining({
+        event_type: "work_order_created",
+        event_data: expect.objectContaining({
+          title: "Conveyor intermittently stopping",
+          createdBy,
+        }),
+      }),
+    ]);
   });
 
   it("lists persisted work orders with pagination", async () => {
@@ -136,12 +174,37 @@ describe("work-order API integration", () => {
     expect(new Set(returnedIds)).toEqual(new Set([first.id, second.id]));
   });
 
+  it("limits requester visibility to work orders they created", async () => {
+    const firstRequester = await createUser();
+    const first = await createWorkOrder(firstRequester, "Inspect first pump");
+    const secondRequester = await createUser();
+    const second = await createWorkOrder(
+      secondRequester,
+      "Inspect second pump",
+    );
+
+    testApp.setActor({ id: firstRequester, role: "requester" });
+    const listResponse = await request(testApp.app).get("/api/work-orders");
+    const getResponse = await request(testApp.app).get(
+      `/api/work-orders/${second.id}`,
+    );
+
+    expect(listResponse.status).toBe(200);
+    expect(
+      listResponse.body.data.map((item: { id: string }) => item.id),
+    ).toEqual([first.id]);
+    expect(getResponse.status).toBe(403);
+    expect(getResponse.body.error.code).toBe("AUTHORIZATION_DENIED");
+  });
+
   it("updates persisted status and priority", async () => {
     const createdBy = await createUser();
     const workOrder = await createWorkOrder(
       createdBy,
       "Replace worn drive bearing",
     );
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
 
     const response = await request(testApp.app)
       .patch(`/api/work-orders/${workOrder.id}`)
@@ -164,6 +227,104 @@ describe("work-order API integration", () => {
     expect(persisted.rows).toEqual([
       { status: "in_progress", priority: "critical" },
     ]);
+
+    const events = await testApp.pool.query<{
+      event_type: string;
+      event_data: Record<string, unknown>;
+    }>(
+      `
+        SELECT event_type, event_data
+        FROM work_order_events
+        WHERE work_order_id = $1
+        ORDER BY created_at, id
+      `,
+      [workOrder.id],
+    );
+
+    expect(events.rows.slice(1)).toEqual(
+      expect.arrayContaining([
+        {
+          event_type: "status_changed",
+          event_data: { previous: "open", current: "in_progress" },
+        },
+        {
+          event_type: "priority_changed",
+          event_data: { previous: "medium", current: "critical" },
+        },
+      ]),
+    );
+    expect(events.rows.slice(1)).toHaveLength(2);
+  });
+
+  it("allows assigned technicians to update status but not priority", async () => {
+    const createdBy = await createUser();
+    const technicianId = await createTechnician();
+    const workOrder = await createWorkOrder(createdBy, "Inspect assigned pump");
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
+    await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ assignedTo: technicianId });
+
+    testApp.setActor({ id: technicianId, role: "technician" });
+    const statusResponse = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ status: "in_progress" });
+    const priorityResponse = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ priority: "critical" });
+
+    expect(statusResponse.status).toBe(200);
+    expect(statusResponse.body.data.status).toBe("in_progress");
+    expect(priorityResponse.status).toBe(403);
+    expect(priorityResponse.body.error.code).toBe("AUTHORIZATION_DENIED");
+  });
+
+  it("lists technicians and assigns one to a work order", async () => {
+    const createdBy = await createUser();
+    const technicianId = await createTechnician();
+    const workOrder = await createWorkOrder(createdBy, "Inspect drive motor");
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
+
+    const usersResponse = await request(testApp.app).get(
+      "/api/users?role=technician",
+    );
+
+    expect(usersResponse.status).toBe(200);
+    expect(usersResponse.body.data).toEqual([
+      expect.objectContaining({
+        id: technicianId,
+        role: "technician",
+      }),
+    ]);
+
+    const assignmentResponse = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ assignedTo: technicianId });
+
+    expect(assignmentResponse.status).toBe(200);
+    expect(assignmentResponse.body.data.assignedTo).toBe(technicianId);
+
+    const persisted = await testApp.pool.query<{ assigned_to: string }>(
+      "SELECT assigned_to FROM work_orders WHERE id = $1",
+      [workOrder.id],
+    );
+    expect(persisted.rows).toEqual([{ assigned_to: technicianId }]);
+  });
+
+  it("rejects assigning a requester", async () => {
+    const createdBy = await createUser();
+    const workOrder = await createWorkOrder(createdBy, "Inspect belt tension");
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
+
+    const response = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ assignedTo: createdBy });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("ASSIGNEE_NOT_ELIGIBLE");
   });
 
   it("deletes a persisted work order", async () => {
@@ -172,6 +333,8 @@ describe("work-order API integration", () => {
       createdBy,
       "Remove damaged belt section",
     );
+
+    testApp.setActor({ id: randomUUID(), role: "admin" });
 
     const deleteResponse = await request(testApp.app).delete(
       `/api/work-orders/${workOrder.id}`,
@@ -194,10 +357,10 @@ describe("work-order API integration", () => {
   });
 
   it("rejects invalid input without persisting a work order", async () => {
+    testApp.setActor({ id: randomUUID(), role: "requester" });
     const response = await request(testApp.app).post("/api/work-orders").send({
       title: "x",
       description: "This description is otherwise sufficiently detailed.",
-      createdBy: randomUUID(),
     });
 
     expect(response.status).toBe(400);
@@ -221,10 +384,10 @@ describe("work-order API integration", () => {
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
 
+    testApp.setActor({ id: randomUUID(), role: "requester" });
     const response = await request(testApp.app).post("/api/work-orders").send({
       title: "Inspect unregistered equipment",
-      description: "The creator UUID does not reference an existing user.",
-      createdBy: randomUUID(),
+      description: "The authenticated user no longer exists in the database.",
     });
 
     expect(response.status).toBe(500);
@@ -254,13 +417,11 @@ describe("work-order API integration", () => {
     const firstResponse = await request(testApp.app)
       .post(`/api/work-orders/${workOrder.id}/comments`)
       .send({
-        userId: createdBy,
         body: "Bearing wear confirmed during inspection.",
       });
     const secondResponse = await request(testApp.app)
       .post(`/api/work-orders/${workOrder.id}/comments`)
       .send({
-        userId: createdBy,
         body: "Replacement bearing has been ordered.",
       });
 
@@ -301,5 +462,28 @@ describe("work-order API integration", () => {
       [workOrder.id],
     );
     expect(persisted.rows).toEqual([{ count: "2" }]);
+
+    const activityResponse = await request(testApp.app).get(
+      `/api/work-orders/${workOrder.id}/activity`,
+    );
+
+    expect(activityResponse.status).toBe(200);
+    expect(activityResponse.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "event",
+          eventType: "work_order_created",
+        }),
+        expect.objectContaining({
+          kind: "comment",
+          body: "Bearing wear confirmed during inspection.",
+        }),
+        expect.objectContaining({
+          kind: "comment",
+          body: "Replacement bearing has been ordered.",
+        }),
+      ]),
+    );
+    expect(activityResponse.body.data).toHaveLength(3);
   });
 });

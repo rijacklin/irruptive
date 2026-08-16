@@ -46,6 +46,7 @@ describe("updateWorkOrder", () => {
       new URL(`http://localhost:3000/api/work-orders/${workOrderId}`),
       {
         method: "PATCH",
+        credentials: "include",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",

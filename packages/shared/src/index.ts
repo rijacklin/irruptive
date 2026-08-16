@@ -4,6 +4,27 @@ export interface HealthResponse {
   status: "ok";
 }
 
+export const userRoles = [
+  "requester",
+  "technician",
+  "supervisor",
+  "admin",
+] as const;
+
+export type UserRole = (typeof userRoles)[number];
+
+export interface UserResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface ListUsersResponse {
+  data: UserResponse[];
+}
+
 export const workOrderStatuses = [
   "open",
   "assigned",
@@ -52,8 +73,6 @@ export interface GetWorkOrderResponse {
 export interface CreateWorkOrderRequest {
   title: string;
   description: string;
-  // TODO(auth): Remove when the API derives the creator from authentication.
-  createdBy: string;
   priority?: WorkOrderPriority;
   category?: string | null;
 }
@@ -65,6 +84,7 @@ export interface CreateWorkOrderResponse {
 export interface UpdateWorkOrderRequest {
   status?: WorkOrderStatus;
   priority?: WorkOrderPriority;
+  assignedTo?: string | null;
 }
 
 export interface UpdateWorkOrderResponse {
@@ -84,11 +104,40 @@ export interface ListCommentsResponse {
 }
 
 export interface CreateCommentRequest {
-  // TODO(auth): Remove when derived from the authenticated user.
-  userId: string;
   body: string;
 }
 
 export interface CreateCommentResponse {
   data: CommentResponse;
+}
+
+export const workOrderActivityEventTypes = [
+  "work_order_created",
+  "status_changed",
+  "priority_changed",
+  "category_changed",
+  "assignment_changed",
+] as const;
+
+export type WorkOrderActivityEventType =
+  (typeof workOrderActivityEventTypes)[number];
+
+export type WorkOrderActivityItemResponse =
+  | {
+      kind: "event";
+      id: string;
+      eventType: WorkOrderActivityEventType;
+      eventData: Record<string, unknown>;
+      createdAt: string;
+    }
+  | {
+      kind: "comment";
+      id: string;
+      userId: string;
+      body: string;
+      createdAt: string;
+    };
+
+export interface ListWorkOrderActivityResponse {
+  data: WorkOrderActivityItemResponse[];
 }
