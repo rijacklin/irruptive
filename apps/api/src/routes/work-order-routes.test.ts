@@ -27,178 +27,107 @@ const validCreateBody = {
   createdBy,
 };
 
-interface InvalidCreateCase {
-  name: string;
-  body: Record<string, unknown>;
-  expectedPath: string;
+function validationCase<Input>(
+  name: string,
+  input: Input,
+  expectedPath: string,
+) {
+  return { name, input, expectedPath };
 }
 
-const invalidCreateCases: InvalidCreateCase[] = [
-  {
-    name: "missing title",
-    body: {
-      description: validCreateBody.description,
-      createdBy,
-    },
-    expectedPath: "title",
-  },
-  {
-    name: "title below minimum length",
-    body: {
-      ...validCreateBody,
-      title: "ab",
-    },
-    expectedPath: "title",
-  },
-  {
-    name: "title above maximum length",
-    body: {
-      ...validCreateBody,
-      title: "a".repeat(201),
-    },
-    expectedPath: "title",
-  },
-  {
-    name: "missing description",
-    body: {
-      title: validCreateBody.title,
-      createdBy,
-    },
-    expectedPath: "description",
-  },
-  {
-    name: "description below minimum length",
-    body: {
-      ...validCreateBody,
-      description: "123456789",
-    },
-    expectedPath: "description",
-  },
-  {
-    name: "missing creator",
-    body: {
+const invalidCreateCases = [
+  validationCase(
+    "missing title",
+    { description: validCreateBody.description, createdBy },
+    "title",
+  ),
+  validationCase(
+    "title below minimum length",
+    { ...validCreateBody, title: "ab" },
+    "title",
+  ),
+  validationCase(
+    "title above maximum length",
+    { ...validCreateBody, title: "a".repeat(201) },
+    "title",
+  ),
+  validationCase(
+    "missing description",
+    { title: validCreateBody.title, createdBy },
+    "description",
+  ),
+  validationCase(
+    "description below minimum length",
+    { ...validCreateBody, description: "123456789" },
+    "description",
+  ),
+  validationCase(
+    "missing creator",
+    {
       title: validCreateBody.title,
       description: validCreateBody.description,
     },
-    expectedPath: "createdBy",
-  },
-  {
-    name: "invalid creator UUID",
-    body: {
-      ...validCreateBody,
-      createdBy: "not-a-uuid",
-    },
-    expectedPath: "createdBy",
-  },
-  {
-    name: "invalid priority",
-    body: {
-      ...validCreateBody,
-      priority: "urgent",
-    },
-    expectedPath: "priority",
-  },
-  {
-    name: "blank category",
-    body: {
-      ...validCreateBody,
-      category: "   ",
-    },
-    expectedPath: "category",
-  },
+    "createdBy",
+  ),
+  validationCase(
+    "invalid creator UUID",
+    { ...validCreateBody, createdBy: "not-a-uuid" },
+    "createdBy",
+  ),
+  validationCase(
+    "invalid priority",
+    { ...validCreateBody, priority: "urgent" },
+    "priority",
+  ),
+  validationCase(
+    "blank category",
+    { ...validCreateBody, category: "   " },
+    "category",
+  ),
 ];
 
-interface InvalidPatchCase {
-  name: string;
-  body: Record<string, unknown>;
-  expectedPath: string;
+const invalidPatchCases = [
+  validationCase("invalid priority", { priority: "urgent" }, "priority"),
+  validationCase("invalid status", { status: "working" }, "status"),
+  validationCase("blank category", { category: "   " }, "category"),
+  validationCase(
+    "invalid assignee",
+    { assignedTo: "not-a-uuid" },
+    "assignedTo",
+  ),
+];
+
+const clearFieldCases = [
+  { name: "category", body: { category: null } },
+  { name: "assignment", body: { assignedTo: null } },
+];
+
+const invalidPaginationCases = [
+  validationCase("limit below minimum", "limit=0", "limit"),
+  validationCase("limit above maximum", "limit=101", "limit"),
+  validationCase("fractional limit", "limit=1.5", "limit"),
+  validationCase("non-numeric limit", "limit=abc", "limit"),
+  validationCase("negative offset", "offset=-1", "offset"),
+  validationCase("fractional offset", "offset=1.5", "offset"),
+  validationCase("non-numeric offset", "offset=abc", "offset"),
+];
+
+function expectValidationError(
+  response: {
+    status: number;
+    body: { error: { details: unknown[] } };
+  },
+  expectedPath: string,
+) {
+  expect(response.status).toBe(400);
+  expect(response.body.error.details).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        path: expectedPath,
+      }),
+    ]),
+  );
 }
-
-const invalidPatchCases: InvalidPatchCase[] = [
-  {
-    name: "invalid priority",
-    body: { priority: "urgent" },
-    expectedPath: "priority",
-  },
-  {
-    name: "invalid status",
-    body: { status: "working" },
-    expectedPath: "status",
-  },
-  {
-    name: "blank category",
-    body: { category: "   " },
-    expectedPath: "category",
-  },
-  {
-    name: "invalid assignee",
-    body: { assignedTo: "not-a-uuid" },
-    expectedPath: "assignedTo",
-  },
-];
-
-interface ClearFieldCase {
-  name: string;
-  body: {
-    category?: null;
-    assignedTo?: null;
-  };
-}
-
-const clearFieldCases: ClearFieldCase[] = [
-  {
-    name: "category",
-    body: { category: null },
-  },
-  {
-    name: "assignment",
-    body: { assignedTo: null },
-  },
-];
-
-interface InvalidPaginationCase {
-  name: string;
-  query: string;
-  expectedPath: "limit" | "offset";
-}
-
-const invalidPaginationCases: InvalidPaginationCase[] = [
-  {
-    name: "limit below minimum",
-    query: "limit=0",
-    expectedPath: "limit",
-  },
-  {
-    name: "limit above maximum",
-    query: "limit=101",
-    expectedPath: "limit",
-  },
-  {
-    name: "fractional limit",
-    query: "limit=1.5",
-    expectedPath: "limit",
-  },
-  {
-    name: "non-numeric limit",
-    query: "limit=abc",
-    expectedPath: "limit",
-  },
-  {
-    name: "negative offset",
-    query: "offset=-1",
-    expectedPath: "offset",
-  },
-  {
-    name: "fractional offset",
-    query: "offset=1.5",
-    expectedPath: "offset",
-  },
-  {
-    name: "non-numeric offset",
-    query: "offset=abc",
-    expectedPath: "offset",
-  },
-];
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -252,21 +181,12 @@ describe("POST /api/work-orders", () => {
 
   it.for(invalidCreateCases)(
     "rejects $name",
-    async ({ body, expectedPath }) => {
+    async ({ input: body, expectedPath }) => {
       const { app, store } = createTestApp();
 
       const response = await request(app).post("/api/work-orders").send(body);
 
-      expect(response.status).toBe(400);
-
-      expect(response.body.error.details).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            path: expectedPath,
-          }),
-        ]),
-      );
-
+      expectValidationError(response, expectedPath);
       expect(store.create).not.toHaveBeenCalled();
     },
   );
@@ -345,21 +265,12 @@ describe("GET /api/work-orders", () => {
 
   it.for(invalidPaginationCases)(
     "rejects $name",
-    async ({ query, expectedPath }) => {
+    async ({ input: query, expectedPath }) => {
       const { app, store } = createTestApp();
 
       const response = await request(app).get(`/api/work-orders?${query}`);
 
-      expect(response.status).toBe(400);
-
-      expect(response.body.error.details).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            path: expectedPath,
-          }),
-        ]),
-      );
-
+      expectValidationError(response, expectedPath);
       expect(store.list).not.toHaveBeenCalled();
     },
   );
@@ -451,25 +362,19 @@ describe("PATCH /api/work-orders/:id", () => {
     expect(response.body.error.code).toBe("WORK_ORDER_NOT_FOUND");
   });
 
-  it.for(invalidPatchCases)("rejects $name", async ({ body, expectedPath }) => {
-    const { app, store } = createTestApp();
+  it.for(invalidPatchCases)(
+    "rejects $name",
+    async ({ input: body, expectedPath }) => {
+      const { app, store } = createTestApp();
 
-    const response = await request(app)
-      .patch(`/api/work-orders/${workOrderId}`)
-      .send(body);
+      const response = await request(app)
+        .patch(`/api/work-orders/${workOrderId}`)
+        .send(body);
 
-    expect(response.status).toBe(400);
-
-    expect(response.body.error.details).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          path: expectedPath,
-        }),
-      ]),
-    );
-
-    expect(store.update).not.toHaveBeenCalled();
-  });
+      expectValidationError(response, expectedPath);
+      expect(store.update).not.toHaveBeenCalled();
+    },
+  );
 
   it.for(clearFieldCases)("accepts clearing $name", async ({ body }) => {
     const { app, store } = createTestApp();
