@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { config } from "dotenv";
 import { Pool } from "pg";
-import { WorkOrderRepository } from "../../src/index.js";
+import {
+  WorkOrderRepository,
+  type CreateWorkOrderInput,
+  type WorkOrder,
+} from "../../src/index.js";
 
 config({
   path: new URL("../../../../.env", import.meta.url),
@@ -45,16 +49,28 @@ async function createUser(): Promise<string> {
   return id;
 }
 
+async function createWorkOrder(
+  overrides: Partial<CreateWorkOrderInput> = {},
+): Promise<WorkOrder> {
+  return repository.create({
+    title: "Conveyor intermittently stopping",
+    description: "Operator reports grinding before shutdown.",
+    ...overrides,
+    createdBy: overrides.createdBy ?? (await createUser()),
+  });
+}
+
+function expectUpdatedAfter(updated: WorkOrder | null, original: WorkOrder) {
+  expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
+    original.updatedAt.getTime(),
+  );
+}
+
 describe("WorkOrderRepository", () => {
   describe("create", () => {
     it("creates a work order with database defaults", async () => {
       const createdBy = await createUser();
-
-      const workOrder = await repository.create({
-        title: "Conveyor intermittently stopping",
-        description: "Operator reports grinding before shutdown.",
-        createdBy,
-      });
+      const workOrder = await createWorkOrder({ createdBy });
 
       expect(workOrder).toMatchObject({
         title: "Conveyor intermittently stopping",
@@ -72,16 +88,14 @@ describe("WorkOrderRepository", () => {
     });
 
     it("creates a work order with optional values", async () => {
-      const createdBy = await createUser();
       const assignedTo = await createUser();
 
-      const workOrder = await repository.create({
+      const workOrder = await createWorkOrder({
         title: "Inspect damaged guard",
         description:
           "The safety guard is visibly bent near the drive assembly.",
         priority: "high",
         category: "Mechanical",
-        createdBy,
         assignedTo,
       });
 
@@ -95,14 +109,7 @@ describe("WorkOrderRepository", () => {
 
   describe("findById", () => {
     it("finds a work order by id", async () => {
-      const createdBy = await createUser();
-
-      const created = await repository.create({
-        title: "Inspect damaged guard",
-        description:
-          "The safety guard is visibly bent near the drive assembly.",
-        createdBy,
-      });
+      const created = await createWorkOrder();
 
       await expect(repository.findById(created.id)).resolves.toEqual(created);
     });
@@ -116,13 +123,13 @@ describe("WorkOrderRepository", () => {
     it("lists work orders with pagination", async () => {
       const createdBy = await createUser();
 
-      const first = await repository.create({
+      const first = await createWorkOrder({
         title: "First reported issue",
         description: "The first sufficiently detailed work-order description.",
         createdBy,
       });
 
-      const second = await repository.create({
+      const second = await createWorkOrder({
         title: "Second reported issue",
         description: "The second sufficiently detailed work-order description.",
         createdBy,
@@ -150,29 +157,18 @@ describe("WorkOrderRepository", () => {
 
   describe("update", () => {
     it("updates a work order priority", async () => {
-      const createdBy = await createUser();
-
-      const created = await repository.create({
-        title: "Conveyor intermittently stopping",
-        description: "Operator reports grinding before shutdown.",
-        createdBy,
-      });
+      const created = await createWorkOrder();
 
       const updated = await repository.update(created.id, {
         priority: "critical",
       });
 
-      expect(updated).toMatchObject({
-        id: created.id,
-        title: created.title,
-        description: created.description,
+      expect(updated).toEqual({
+        ...created,
         priority: "critical",
-        createdBy,
+        updatedAt: expect.any(Date),
       });
-
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        created.updatedAt.getTime(),
-      );
+      expectUpdatedAfter(updated, created);
     });
 
     it("returns null when updating a missing work order", async () => {
@@ -182,152 +178,85 @@ describe("WorkOrderRepository", () => {
     });
 
     it("only updates status if other fields are not provided", async () => {
-      const createdBy = await createUser();
-
-      const created = await repository.create({
-        title: "Remove obsolete report",
-        description: "This work order was created for deletion testing.",
-        createdBy,
-      });
+      const created = await createWorkOrder();
 
       const updated = await repository.update(created.id, {
         status: "blocked",
       });
 
-      expect(updated).toMatchObject({
-        id: created.id,
-        title: created.title,
-        description: created.description,
+      expect(updated).toEqual({
+        ...created,
         status: "blocked",
-        priority: created.priority,
-        category: created.category,
-        createdBy: created.createdBy,
-        assignedTo: created.assignedTo,
-        createdAt: created.createdAt,
+        updatedAt: expect.any(Date),
       });
-
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        created.updatedAt.getTime(),
-      );
+      expectUpdatedAfter(updated, created);
     });
 
     it("only updates category if other fields are not provided", async () => {
-      const createdBy = await createUser();
-
-      const created = await repository.create({
-        title: "Remove obsolete report",
-        description: "This work order was created for deletion testing.",
-        createdBy,
-      });
+      const created = await createWorkOrder();
 
       const updated = await repository.update(created.id, {
         category: "Obsolete",
       });
 
-      expect(updated).toMatchObject({
-        id: created.id,
-        title: created.title,
-        description: created.description,
-        status: created.status,
-        priority: created.priority,
+      expect(updated).toEqual({
+        ...created,
         category: "Obsolete",
-        createdBy: created.createdBy,
-        assignedTo: created.assignedTo,
-        createdAt: created.createdAt,
+        updatedAt: expect.any(Date),
       });
-
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        created.updatedAt.getTime(),
-      );
+      expectUpdatedAfter(updated, created);
     });
 
     it("only updates assignment if other fields are not provided", async () => {
-      const createdBy = await createUser();
       const assignedTo = await createUser();
-
-      const created = await repository.create({
-        title: "Remove obsolete report",
-        description: "This work order was created for deletion testing.",
-        createdBy,
-      });
+      const created = await createWorkOrder();
 
       const updated = await repository.update(created.id, {
-        assignedTo: assignedTo,
-      });
-
-      expect(updated).toMatchObject({
-        id: created.id,
-        title: created.title,
-        description: created.description,
-        status: created.status,
-        priority: created.priority,
-        category: created.category,
-        createdBy: created.createdBy,
-        assignedTo: assignedTo,
-        createdAt: created.createdAt,
-      });
-
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        created.updatedAt.getTime(),
-      );
-    });
-
-    it("handles setting assignee to null", async () => {
-      const createdBy = await createUser();
-      const assignedTo = await createUser();
-
-      const created = await repository.create({
-        title: "Remove obsolete report",
-        description: "This work order was created for deletion testing.",
-        createdBy,
         assignedTo,
       });
 
-      expect(created.assignedTo).toBe(assignedTo);
+      expect(updated).toEqual({
+        ...created,
+        assignedTo,
+        updatedAt: expect.any(Date),
+      });
+      expectUpdatedAfter(updated, created);
+    });
+
+    it("handles setting assignee to null", async () => {
+      const assignedTo = await createUser();
+      const created = await createWorkOrder({ assignedTo });
 
       const updated = await repository.update(created.id, {
         assignedTo: null,
       });
 
-      expect(updated?.assignedTo).toBeNull();
-
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        created.updatedAt.getTime(),
-      );
+      expect(updated).toEqual({
+        ...created,
+        assignedTo: null,
+        updatedAt: expect.any(Date),
+      });
+      expectUpdatedAfter(updated, created);
     });
 
     it("clears the category when category is null", async () => {
-      const createdBy = await createUser();
-
-      const created = await repository.create({
-        title: "Remove obsolete report",
-        description: "This work order was created for deletion testing.",
-        category: "Mechanical",
-        createdBy,
-      });
-
-      expect(created.category).toBe("Mechanical");
+      const created = await createWorkOrder({ category: "Mechanical" });
 
       const updated = await repository.update(created.id, {
         category: null,
       });
 
-      expect(updated?.category).toBeNull();
-
-      expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        created.updatedAt.getTime(),
-      );
+      expect(updated).toEqual({
+        ...created,
+        category: null,
+        updatedAt: expect.any(Date),
+      });
+      expectUpdatedAfter(updated, created);
     });
 
     it("updates multiple fields together", async () => {
-      const createdBy = await createUser();
       const assignedTo = await createUser();
-
-      const created = await repository.create({
-        title: "Conveyor intermittently stopping",
-        description: "Operator reports grinding before shutdown.",
-        createdBy,
-      });
+      const created = await createWorkOrder();
 
       const updated = await repository.update(created.id, {
         status: "assigned",
@@ -336,13 +265,15 @@ describe("WorkOrderRepository", () => {
         assignedTo,
       });
 
-      expect(updated).toMatchObject({
-        id: created.id,
+      expect(updated).toEqual({
+        ...created,
         status: "assigned",
         priority: "high",
         category: "Mechanical",
         assignedTo,
+        updatedAt: expect.any(Date),
       });
+      expectUpdatedAfter(updated, created);
     });
 
     it("rejects an update with no fields", async () => {
@@ -354,13 +285,7 @@ describe("WorkOrderRepository", () => {
 
   describe("delete", () => {
     it("deletes an existing work order", async () => {
-      const createdBy = await createUser();
-
-      const workOrder = await repository.create({
-        title: "Remove obsolete report",
-        description: "This work order was created for deletion testing.",
-        createdBy,
-      });
+      const workOrder = await createWorkOrder();
 
       await expect(repository.delete(workOrder.id)).resolves.toBe(true);
       await expect(repository.findById(workOrder.id)).resolves.toBeNull();
