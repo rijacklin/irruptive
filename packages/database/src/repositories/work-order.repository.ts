@@ -26,6 +26,8 @@ export interface CreateWorkOrderInput {
 export interface ListWorkOrdersInput {
   limit: number;
   offset: number;
+  createdBy?: string;
+  assignedTo?: string;
 }
 
 export interface UpdateWorkOrderInput {
@@ -131,11 +133,18 @@ export class WorkOrderRepository {
       `
         SELECT ${workOrderColumns}
         FROM work_orders
+        WHERE ($3::uuid IS NULL OR created_by = $3)
+          AND ($4::uuid IS NULL OR assigned_to = $4)
         ORDER BY created_at DESC, id DESC
         LIMIT $1
         OFFSET $2
       `,
-      [input.limit, input.offset],
+      [
+        input.limit,
+        input.offset,
+        input.createdBy ?? null,
+        input.assignedTo ?? null,
+      ],
     );
 
     return result.rows.map(mapWorkOrderRow);

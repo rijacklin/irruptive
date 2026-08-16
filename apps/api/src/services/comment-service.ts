@@ -3,7 +3,14 @@ import type {
   CreateCommentInput,
   WorkOrder,
 } from "@irruptive/database";
-import { WorkOrderNotFoundError } from "../errors/application-error.js";
+import {
+  AuthorizationDeniedError,
+  WorkOrderNotFoundError,
+} from "../errors/application-error.js";
+import {
+  canAccessWorkOrder,
+  type AuthorizationActor,
+} from "../authorization/work-order-authorization.js";
 
 export interface CommentStore {
   create(input: CreateCommentInput): Promise<Comment>;
@@ -20,20 +27,36 @@ export class CommentService {
     private readonly workOrders: WorkOrderLookup,
   ) {}
 
-  private async ensureWorkOrderExists(workOrderId: string): Promise<void> {
+  private async findWorkOrder(workOrderId: string): Promise<WorkOrder> {
     const workOrder = await this.workOrders.findById(workOrderId);
     if (!workOrder) {
       throw new WorkOrderNotFoundError(workOrderId);
     }
+
+    return workOrder;
   }
 
-  async create(input: CreateCommentInput): Promise<Comment> {
-    await this.ensureWorkOrderExists(input.workOrderId);
-    return this.comments.create(input);
+  async create(
+    actor: AuthorizationActor,
+    input: Omit<CreateCommentInput, "userId">,
+  ): Promise<Comment> {
+    const workOrder = await this.findWorkOrder(input.workOrderId);
+    if (!canAccessWorkOrder(actor, workOrder, "comment")) {
+      throw new AuthorizationDeniedError();
+    }
+
+    return this.comments.create({ ...input, userId: actor.id });
   }
 
-  async list(workOrderId: string): Promise<Comment[]> {
-    await this.ensureWorkOrderExists(workOrderId);
+  async list(
+    actor: AuthorizationActor,
+    workOrderId: string,
+  ): Promise<Comment[]> {
+    const workOrder = await this.findWorkOrder(workOrderId);
+    if (!canAccessWorkOrder(actor, workOrder, "view")) {
+      throw new AuthorizationDeniedError();
+    }
+
     return this.comments.listByWorkOrderId(workOrderId);
   }
 }

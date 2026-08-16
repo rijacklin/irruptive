@@ -290,6 +290,7 @@ describe("PATCH /api/work-orders/:id", () => {
       updatedAt: new Date("2026-08-13T13:00:00.000Z"),
     } satisfies WorkOrder;
 
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(store.update).mockResolvedValue(updated);
 
     const response = await request(app)
@@ -328,6 +329,7 @@ describe("PATCH /api/work-orders/:id", () => {
     const { app, store, userStore } = createTestApp();
     const assignedTo = "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc";
 
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(userStore.findAssignableById).mockResolvedValue({
       id: assignedTo,
       name: "Alex Technician",
@@ -352,6 +354,7 @@ describe("PATCH /api/work-orders/:id", () => {
   it("rejects an ineligible assignee", async () => {
     const { app, store, userStore } = createTestApp();
     const assignedTo = "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc";
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(userStore.findAssignableById).mockResolvedValue(null);
 
     const response = await request(app)
@@ -376,7 +379,7 @@ describe("PATCH /api/work-orders/:id", () => {
 
   it("returns 404 when updating a missing work order", async () => {
     const { app, store } = createTestApp();
-    vi.mocked(store.update).mockResolvedValue(null);
+    vi.mocked(store.findById).mockResolvedValue(null);
 
     const response = await request(app)
       .patch(`/api/work-orders/${workOrderId}`)
@@ -403,6 +406,7 @@ describe("PATCH /api/work-orders/:id", () => {
   it.for(clearFieldCases)("accepts clearing $name", async ({ body }) => {
     const { app, store } = createTestApp();
 
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(store.update).mockResolvedValue({
       ...workOrder,
       ...body,
@@ -420,6 +424,7 @@ describe("PATCH /api/work-orders/:id", () => {
 describe("DELETE /api/work-orders/:id", () => {
   it("deletes an existing work order", async () => {
     const { app, store } = createTestApp();
+    vi.mocked(store.findById).mockResolvedValue(workOrder);
     vi.mocked(store.delete).mockResolvedValue(true);
 
     const response = await request(app).delete(
@@ -433,7 +438,7 @@ describe("DELETE /api/work-orders/:id", () => {
 
   it("returns 404 when deleting a missing work order", async () => {
     const { app, store } = createTestApp();
-    vi.mocked(store.delete).mockResolvedValue(false);
+    vi.mocked(store.findById).mockResolvedValue(null);
 
     const response = await request(app).delete(
       `/api/work-orders/${workOrderId}`,

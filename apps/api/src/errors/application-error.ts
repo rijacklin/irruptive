@@ -15,6 +15,16 @@ export class AuthenticationRequiredError extends ApplicationError {
   }
 }
 
+export class AuthorizationDeniedError extends ApplicationError {
+  constructor() {
+    super(
+      403,
+      "AUTHORIZATION_DENIED",
+      "You do not have permission to perform this operation.",
+    );
+  }
+}
+
 export class WorkOrderNotFoundError extends ApplicationError {
   constructor(id: string) {
     super(404, "WORK_ORDER_NOT_FOUND", `Work order ${id} does not exist.`);

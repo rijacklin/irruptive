@@ -153,6 +153,25 @@ describe("WorkOrderRepository", () => {
         new Set([first.id, second.id]),
       );
     });
+
+    it("applies ownership and assignment visibility before pagination", async () => {
+      const firstRequester = await createUser();
+      const secondRequester = await createUser();
+      const technician = await createUser();
+      const owned = await createWorkOrder({ createdBy: firstRequester });
+      const assigned = await createWorkOrder({
+        createdBy: secondRequester,
+        assignedTo: technician,
+      });
+      await createWorkOrder({ createdBy: secondRequester });
+
+      await expect(
+        repository.list({ limit: 20, offset: 0, createdBy: firstRequester }),
+      ).resolves.toEqual([owned]);
+      await expect(
+        repository.list({ limit: 20, offset: 0, assignedTo: technician }),
+      ).resolves.toEqual([assigned]);
+    });
   });
 
   describe("update", () => {

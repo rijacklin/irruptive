@@ -39,4 +39,17 @@ describe("GET /api/users", () => {
     expect(response.body.error.code).toBe("VALIDATION_ERROR");
     expect(userStore.list).not.toHaveBeenCalled();
   });
+
+  it("rejects user-directory access for requesters", async () => {
+    const { app, userStore } = createTestApp({
+      id: "234173b3-13a5-43c8-baf7-bf06640cf7fd",
+      role: "requester",
+    });
+
+    const response = await request(app).get("/api/users?role=technician");
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("AUTHORIZATION_DENIED");
+    expect(userStore.list).not.toHaveBeenCalled();
+  });
 });

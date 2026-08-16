@@ -152,12 +152,37 @@ describe("work-order API integration", () => {
     expect(new Set(returnedIds)).toEqual(new Set([first.id, second.id]));
   });
 
+  it("limits requester visibility to work orders they created", async () => {
+    const firstRequester = await createUser();
+    const first = await createWorkOrder(firstRequester, "Inspect first pump");
+    const secondRequester = await createUser();
+    const second = await createWorkOrder(
+      secondRequester,
+      "Inspect second pump",
+    );
+
+    testApp.setActor({ id: firstRequester, role: "requester" });
+    const listResponse = await request(testApp.app).get("/api/work-orders");
+    const getResponse = await request(testApp.app).get(
+      `/api/work-orders/${second.id}`,
+    );
+
+    expect(listResponse.status).toBe(200);
+    expect(
+      listResponse.body.data.map((item: { id: string }) => item.id),
+    ).toEqual([first.id]);
+    expect(getResponse.status).toBe(403);
+    expect(getResponse.body.error.code).toBe("AUTHORIZATION_DENIED");
+  });
+
   it("updates persisted status and priority", async () => {
     const createdBy = await createUser();
     const workOrder = await createWorkOrder(
       createdBy,
       "Replace worn drive bearing",
     );
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
 
     const response = await request(testApp.app)
       .patch(`/api/work-orders/${workOrder.id}`)
@@ -182,10 +207,36 @@ describe("work-order API integration", () => {
     ]);
   });
 
+  it("allows assigned technicians to update status but not priority", async () => {
+    const createdBy = await createUser();
+    const technicianId = await createTechnician();
+    const workOrder = await createWorkOrder(createdBy, "Inspect assigned pump");
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
+    await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ assignedTo: technicianId });
+
+    testApp.setActor({ id: technicianId, role: "technician" });
+    const statusResponse = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ status: "in_progress" });
+    const priorityResponse = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ priority: "critical" });
+
+    expect(statusResponse.status).toBe(200);
+    expect(statusResponse.body.data.status).toBe("in_progress");
+    expect(priorityResponse.status).toBe(403);
+    expect(priorityResponse.body.error.code).toBe("AUTHORIZATION_DENIED");
+  });
+
   it("lists technicians and assigns one to a work order", async () => {
     const createdBy = await createUser();
     const technicianId = await createTechnician();
     const workOrder = await createWorkOrder(createdBy, "Inspect drive motor");
+
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
 
     const usersResponse = await request(testApp.app).get(
       "/api/users?role=technician",
@@ -217,6 +268,8 @@ describe("work-order API integration", () => {
     const createdBy = await createUser();
     const workOrder = await createWorkOrder(createdBy, "Inspect belt tension");
 
+    testApp.setActor({ id: randomUUID(), role: "supervisor" });
+
     const response = await request(testApp.app)
       .patch(`/api/work-orders/${workOrder.id}`)
       .send({ assignedTo: createdBy });
@@ -231,6 +284,8 @@ describe("work-order API integration", () => {
       createdBy,
       "Remove damaged belt section",
     );
+
+    testApp.setActor({ id: randomUUID(), role: "admin" });
 
     const deleteResponse = await request(testApp.app).delete(
       `/api/work-orders/${workOrder.id}`,

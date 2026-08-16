@@ -7,8 +7,16 @@ import type {
 import type { User } from "@irruptive/database";
 import {
   AssigneeNotEligibleError,
+  AuthorizationDeniedError,
   WorkOrderNotFoundError,
 } from "../errors/application-error.js";
+import {
+  canAccessWorkOrder,
+  canCreateWorkOrder,
+  canUpdateWorkOrder,
+  getWorkOrderListScope,
+  type AuthorizationActor,
+} from "../authorization/work-order-authorization.js";
 
 export interface WorkOrderStore {
   create(input: CreateWorkOrderInput): Promise<WorkOrder>;
@@ -28,11 +36,18 @@ export class WorkOrderService {
     private readonly assignees: AssigneeStore,
   ) {}
 
-  async create(input: CreateWorkOrderInput): Promise<WorkOrder> {
-    return this.workOrders.create(input);
+  async create(
+    actor: AuthorizationActor,
+    input: Omit<CreateWorkOrderInput, "createdBy">,
+  ): Promise<WorkOrder> {
+    if (!canCreateWorkOrder(actor)) {
+      throw new AuthorizationDeniedError();
+    }
+
+    return this.workOrders.create({ ...input, createdBy: actor.id });
   }
 
-  async getById(id: string): Promise<WorkOrder> {
+  private async findRequired(id: string): Promise<WorkOrder> {
     const workOrder = await this.workOrders.findById(id);
 
     if (!workOrder) {
@@ -42,11 +57,34 @@ export class WorkOrderService {
     return workOrder;
   }
 
-  async list(input: ListWorkOrdersInput): Promise<WorkOrder[]> {
-    return this.workOrders.list(input);
+  async getById(actor: AuthorizationActor, id: string): Promise<WorkOrder> {
+    const workOrder = await this.findRequired(id);
+
+    if (!canAccessWorkOrder(actor, workOrder, "view")) {
+      throw new AuthorizationDeniedError();
+    }
+
+    return workOrder;
   }
 
-  async update(id: string, input: UpdateWorkOrderInput): Promise<WorkOrder> {
+  async list(
+    actor: AuthorizationActor,
+    input: ListWorkOrdersInput,
+  ): Promise<WorkOrder[]> {
+    return this.workOrders.list({ ...input, ...getWorkOrderListScope(actor) });
+  }
+
+  async update(
+    actor: AuthorizationActor,
+    id: string,
+    input: UpdateWorkOrderInput,
+  ): Promise<WorkOrder> {
+    const existing = await this.findRequired(id);
+
+    if (!canUpdateWorkOrder(actor, existing, input)) {
+      throw new AuthorizationDeniedError();
+    }
+
     if (input.assignedTo) {
       const assignee = await this.assignees.findAssignableById(
         input.assignedTo,
@@ -66,7 +104,13 @@ export class WorkOrderService {
     return workOrder;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(actor: AuthorizationActor, id: string): Promise<void> {
+    const existing = await this.findRequired(id);
+
+    if (!canAccessWorkOrder(actor, existing, "delete")) {
+      throw new AuthorizationDeniedError();
+    }
+
     const deleted = await this.workOrders.delete(id);
 
     if (!deleted) {

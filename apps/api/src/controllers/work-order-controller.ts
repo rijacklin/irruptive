@@ -21,15 +21,14 @@ export function createWorkOrderController(service: WorkOrderService) {
       response: Response,
     ) => {
       const actor = getAuthenticatedActor(request);
-      const input: CreateWorkOrderInput = {
+      const input: Omit<CreateWorkOrderInput, "createdBy"> = {
         title: body.title,
         description: body.description,
-        createdBy: actor.id,
         ...(body.priority !== undefined ? { priority: body.priority } : {}),
         ...(body.category !== undefined ? { category: body.category } : {}),
       };
 
-      const workOrder = await service.create(input);
+      const workOrder = await service.create(actor, input);
 
       response.status(201).json({
         data: serializeWorkOrder(workOrder),
@@ -38,10 +37,13 @@ export function createWorkOrderController(service: WorkOrderService) {
 
     getById: async (
       { params }: { params: WorkOrderIdParams },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
-      const workOrder = await service.getById(params.id);
+      const workOrder = await service.getById(
+        getAuthenticatedActor(request),
+        params.id,
+      );
 
       response.json({
         data: serializeWorkOrder(workOrder),
@@ -50,10 +52,13 @@ export function createWorkOrderController(service: WorkOrderService) {
 
     list: async (
       { query }: { query: ListWorkOrdersRequest },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
-      const workOrders = await service.list(query);
+      const workOrders = await service.list(
+        getAuthenticatedActor(request),
+        query,
+      );
 
       response.json({
         data: workOrders.map(serializeWorkOrder),
@@ -69,7 +74,7 @@ export function createWorkOrderController(service: WorkOrderService) {
         params: WorkOrderIdParams;
         body: UpdateWorkOrderRequest;
       },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
       const input: UpdateWorkOrderInput = {
@@ -81,7 +86,11 @@ export function createWorkOrderController(service: WorkOrderService) {
           : {}),
       };
 
-      const workOrder = await service.update(params.id, input);
+      const workOrder = await service.update(
+        getAuthenticatedActor(request),
+        params.id,
+        input,
+      );
 
       response.json({
         data: serializeWorkOrder(workOrder),
@@ -90,10 +99,10 @@ export function createWorkOrderController(service: WorkOrderService) {
 
     delete: async (
       { params }: { params: WorkOrderIdParams },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
-      await service.delete(params.id);
+      await service.delete(getAuthenticatedActor(request), params.id);
       response.status(204).send();
     },
   };

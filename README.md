@@ -43,6 +43,12 @@ Application API routes require a Better Auth session cookie. The API derives
 work-order creators and comment authors from that session; client-supplied user
 IDs are not accepted. `GET /health` and `/api/auth/*` remain public.
 
+Role permissions are enforced by backend services. Requesters see work orders
+they created, technicians see work assigned to them, and supervisors and
+administrators have organization-wide visibility. Supervisors can assign and
+reprioritize work; assigned technicians can progress work through technician
+statuses; only administrators can delete work orders.
+
 Start each application in a separate terminal:
 
 ```bash

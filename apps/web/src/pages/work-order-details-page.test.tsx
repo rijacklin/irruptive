@@ -21,7 +21,14 @@ import {
 } from "@/api/work-order";
 import { createComment, listComments } from "@/api/comment";
 import { listUsers } from "@/api/user";
+import { authClient } from "@/lib/auth-client";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
+
+vi.mock("@/lib/auth-client", () => ({
+  authClient: {
+    useSession: vi.fn(),
+  },
+}));
 
 vi.mock("@/api/work-order", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/api/work-order")>();
@@ -94,6 +101,34 @@ beforeEach(() => {
   const technicians: ListUsersResponse = { data: [technician] };
   vi.mocked(listComments).mockResolvedValue(comments);
   vi.mocked(listUsers).mockResolvedValue(technicians);
+  vi.mocked(authClient.useSession).mockReturnValue({
+    data: {
+      user: {
+        id: "55555555-5555-4555-8555-555555555555",
+        name: "Sam Supervisor",
+        email: "sam@example.com",
+        emailVerified: true,
+        image: null,
+        createdAt: new Date("2026-08-16T12:00:00.000Z"),
+        updatedAt: new Date("2026-08-16T12:00:00.000Z"),
+        role: "supervisor",
+      },
+      session: {
+        id: "session-id",
+        userId: "55555555-5555-4555-8555-555555555555",
+        token: "session-token",
+        expiresAt: new Date("2026-08-23T12:00:00.000Z"),
+        createdAt: new Date("2026-08-16T12:00:00.000Z"),
+        updatedAt: new Date("2026-08-16T12:00:00.000Z"),
+        ipAddress: null,
+        userAgent: null,
+      },
+    },
+    isPending: false,
+    isRefetching: false,
+    error: null,
+    refetch: vi.fn(),
+  });
 });
 
 afterEach(() => {
@@ -173,6 +208,31 @@ describe("WorkOrderDetailsPage", () => {
     ).toHaveAttribute("href", "/work-orders");
 
     expect(getWorkOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides management controls from requesters", async () => {
+    vi.mocked(authClient.useSession).mockReturnValue({
+      ...vi.mocked(authClient.useSession)(),
+      data: {
+        ...vi.mocked(authClient.useSession)().data!,
+        user: {
+          ...vi.mocked(authClient.useSession)().data!.user,
+          id: response.data.createdBy,
+          role: "requester",
+        },
+      },
+    });
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+
+    renderDetailsPage();
+
+    expect(
+      await screen.findByRole("heading", { name: response.data.title }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Update work order" }),
+    ).not.toBeInTheDocument();
+    expect(listUsers).not.toHaveBeenCalled();
   });
 
   it("updates the status and priority", async () => {

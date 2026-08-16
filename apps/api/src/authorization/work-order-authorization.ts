@@ -36,6 +36,25 @@ export function canCreateWorkOrder(actor: AuthorizationActor): boolean {
   );
 }
 
+export function canListUsers(actor: AuthorizationActor): boolean {
+  return hasElevatedAccess(actor);
+}
+
+export function getWorkOrderListScope(actor: AuthorizationActor): {
+  createdBy?: string;
+  assignedTo?: string;
+} {
+  if (actor.role === "requester") {
+    return { createdBy: actor.id };
+  }
+
+  if (actor.role === "technician") {
+    return { assignedTo: actor.id };
+  }
+
+  return {};
+}
+
 export function canAccessWorkOrder(
   actor: AuthorizationActor,
   workOrder: WorkOrder,

@@ -20,13 +20,12 @@ export function createCommentController(service: CommentService) {
       response: Response,
     ) => {
       const actor = getAuthenticatedActor(request);
-      const input: CreateCommentInput = {
+      const input: Omit<CreateCommentInput, "userId"> = {
         workOrderId: params.id,
-        userId: actor.id,
         body: body.body,
       };
 
-      const comment = await service.create(input);
+      const comment = await service.create(actor, input);
 
       response.status(201).json({
         data: serializeComment(comment),
@@ -35,10 +34,13 @@ export function createCommentController(service: CommentService) {
 
     list: async (
       { params }: { params: WorkOrderIdParams },
-      _request: Request,
+      request: Request,
       response: Response,
     ) => {
-      const comments = await service.list(params.id);
+      const comments = await service.list(
+        getAuthenticatedActor(request),
+        params.id,
+      );
 
       response.json({
         data: comments.map(serializeComment),
