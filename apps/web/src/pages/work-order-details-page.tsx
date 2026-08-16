@@ -7,6 +7,7 @@ import {
 } from "@/components/work-orders/work-order-badges";
 import { WorkOrderUpdateForm } from "@/components/work-orders/work-order-update-form";
 import { WorkOrderComments } from "@/components/work-orders/work-order-comments";
+import { WorkOrderActivityTimeline } from "@/components/work-orders/work-order-activity-timeline";
 import { useWorkOrder } from "@/hooks/use-work-order";
 import { authClient } from "@/lib/auth-client";
 
@@ -174,6 +175,8 @@ export function WorkOrderDetailsPage() {
           </div>
         </dl>
       </section>
+
+      <WorkOrderActivityTimeline workOrderId={workOrder.id} />
 
       <WorkOrderComments workOrderId={workOrder.id} />
     </main>

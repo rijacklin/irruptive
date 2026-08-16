@@ -1,5 +1,9 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type { WorkOrderPriority, WorkOrderStatus } from "@irruptive/shared";
+import {
+  WorkOrderEventRepository,
+  type WorkOrderEventType,
+} from "./work-order-event.repository.js";
 
 export interface WorkOrder {
   id: string;
@@ -82,36 +86,55 @@ export class WorkOrderRepository {
   constructor(private readonly pool: Pool) {}
 
   async create(input: CreateWorkOrderInput): Promise<WorkOrder> {
-    const result = await this.pool.query<WorkOrderRow>(
-      `
-        INSERT INTO work_orders (
-          title,
-          description,
-          priority,
-          category,
-          created_by,
-          assigned_to
-        )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING ${workOrderColumns}
-      `,
-      [
-        input.title,
-        input.description,
-        input.priority ?? "medium",
-        input.category ?? null,
-        input.createdBy,
-        input.assignedTo ?? null,
-      ],
-    );
+    return this.withTransaction(async (client) => {
+      const result = await client.query<WorkOrderRow>(
+        `
+          INSERT INTO work_orders (
+            title,
+            description,
+            priority,
+            category,
+            created_by,
+            assigned_to
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING ${workOrderColumns}
+        `,
+        [
+          input.title,
+          input.description,
+          input.priority ?? "medium",
+          input.category ?? null,
+          input.createdBy,
+          input.assignedTo ?? null,
+        ],
+      );
 
-    const row = result.rows[0];
+      const row = result.rows[0];
 
-    if (!row) {
-      throw new Error("Work order insert returned no row");
-    }
+      if (!row) {
+        throw new Error("Work order insert returned no row");
+      }
 
-    return mapWorkOrderRow(row);
+      const workOrder = mapWorkOrderRow(row);
+      const events = new WorkOrderEventRepository(client);
+
+      await events.create({
+        workOrderId: workOrder.id,
+        eventType: "work_order_created",
+        eventData: {
+          title: workOrder.title,
+          description: workOrder.description,
+          status: workOrder.status,
+          priority: workOrder.priority,
+          category: workOrder.category,
+          createdBy: workOrder.createdBy,
+          assignedTo: workOrder.assignedTo,
+        },
+      });
+
+      return workOrder;
+    });
   }
 
   async findById(id: string): Promise<WorkOrder | null> {
@@ -182,20 +205,86 @@ export class WorkOrderRepository {
       throw new Error("Update requires at least one field");
     }
 
-    const result = await this.pool.query<WorkOrderRow>(
-      `
-        UPDATE work_orders
-        SET
-          ${assignments.join(",\n")},
-          updated_at = now()
-        WHERE id = $1
-        RETURNING ${workOrderColumns}
-      `,
-      values,
-    );
+    return this.withTransaction(async (client) => {
+      const existingResult = await client.query<WorkOrderRow>(
+        `
+          SELECT ${workOrderColumns}
+          FROM work_orders
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [id],
+      );
+      const existingRow = existingResult.rows[0];
 
-    const row = result.rows[0];
-    return row ? mapWorkOrderRow(row) : null;
+      if (!existingRow) {
+        return null;
+      }
+
+      const existing = mapWorkOrderRow(existingRow);
+      const result = await client.query<WorkOrderRow>(
+        `
+          UPDATE work_orders
+          SET
+            ${assignments.join(",\n")},
+            updated_at = now()
+          WHERE id = $1
+          RETURNING ${workOrderColumns}
+        `,
+        values,
+      );
+      const row = result.rows[0];
+
+      if (!row) {
+        throw new Error("Work order update returned no row");
+      }
+
+      const updated = mapWorkOrderRow(row);
+      const events = new WorkOrderEventRepository(client);
+      const changes: Array<{
+        eventType: WorkOrderEventType;
+        previous: unknown;
+        current: unknown;
+      }> = [
+        {
+          eventType: "status_changed",
+          previous: existing.status,
+          current: updated.status,
+        },
+        {
+          eventType: "priority_changed",
+          previous: existing.priority,
+          current: updated.priority,
+        },
+        {
+          eventType: "category_changed",
+          previous: existing.category,
+          current: updated.category,
+        },
+        {
+          eventType: "assignment_changed",
+          previous: existing.assignedTo,
+          current: updated.assignedTo,
+        },
+      ];
+
+      for (const change of changes) {
+        if (change.previous === change.current) {
+          continue;
+        }
+
+        await events.create({
+          workOrderId: id,
+          eventType: change.eventType,
+          eventData: {
+            previous: change.previous,
+            current: change.current,
+          },
+        });
+      }
+
+      return updated;
+    });
   }
 
   async delete(id: string): Promise<boolean> {
@@ -208,5 +297,23 @@ export class WorkOrderRepository {
     );
 
     return result.rowCount === 1;
+  }
+
+  private async withTransaction<T>(
+    operation: (client: PoolClient) => Promise<T>,
+  ): Promise<T> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query("BEGIN");
+      const result = await operation(client);
+      await client.query("COMMIT");
+      return result;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }

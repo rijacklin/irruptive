@@ -5,6 +5,7 @@ import {
   CommentRepository,
   createDatabasePool,
   UserRepository,
+  WorkOrderEventRepository,
   WorkOrderRepository,
 } from "@irruptive/database";
 import { createApp } from "./app.js";
@@ -13,6 +14,7 @@ import { WorkOrderService } from "./services/work-order-service.js";
 import { CommentService } from "./services/comment-service.js";
 import { UserService } from "./services/user-service.js";
 import { createAuth } from "./auth.js";
+import { WorkOrderActivityService } from "./services/work-order-activity-service.js";
 
 loadDotenv({
   // fix to resolve .env in root dir
@@ -35,6 +37,7 @@ const auth = createAuth(pool, {
 const workOrderRepository = new WorkOrderRepository(pool);
 const commentRepository = new CommentRepository(pool);
 const userRepository = new UserRepository(pool);
+const workOrderEventRepository = new WorkOrderEventRepository(pool);
 const workOrderService = new WorkOrderService(
   workOrderRepository,
   userRepository,
@@ -44,10 +47,16 @@ const commentService = new CommentService(
   workOrderRepository,
 );
 const userService = new UserService(userRepository);
+const workOrderActivityService = new WorkOrderActivityService(
+  workOrderRepository,
+  commentRepository,
+  workOrderEventRepository,
+);
 const app = createApp({
   workOrderService,
   commentService,
   userService,
+  workOrderActivityService,
   authHandler: toNodeHandler(auth),
   resolveSession: (headers) => auth.api.getSession({ headers }),
   webOrigin: environment.WEB_ORIGIN,

@@ -123,6 +123,28 @@ describe("work-order API integration", () => {
     );
 
     expect(persisted.rows).toEqual([{ id: workOrderId }]);
+
+    const events = await testApp.pool.query<{
+      event_type: string;
+      event_data: Record<string, unknown>;
+    }>(
+      `
+        SELECT event_type, event_data
+        FROM work_order_events
+        WHERE work_order_id = $1
+      `,
+      [workOrderId],
+    );
+
+    expect(events.rows).toEqual([
+      expect.objectContaining({
+        event_type: "work_order_created",
+        event_data: expect.objectContaining({
+          title: "Conveyor intermittently stopping",
+          createdBy,
+        }),
+      }),
+    ]);
   });
 
   it("lists persisted work orders with pagination", async () => {
@@ -205,6 +227,33 @@ describe("work-order API integration", () => {
     expect(persisted.rows).toEqual([
       { status: "in_progress", priority: "critical" },
     ]);
+
+    const events = await testApp.pool.query<{
+      event_type: string;
+      event_data: Record<string, unknown>;
+    }>(
+      `
+        SELECT event_type, event_data
+        FROM work_order_events
+        WHERE work_order_id = $1
+        ORDER BY created_at, id
+      `,
+      [workOrder.id],
+    );
+
+    expect(events.rows.slice(1)).toEqual(
+      expect.arrayContaining([
+        {
+          event_type: "status_changed",
+          event_data: { previous: "open", current: "in_progress" },
+        },
+        {
+          event_type: "priority_changed",
+          event_data: { previous: "medium", current: "critical" },
+        },
+      ]),
+    );
+    expect(events.rows.slice(1)).toHaveLength(2);
   });
 
   it("allows assigned technicians to update status but not priority", async () => {
@@ -413,5 +462,28 @@ describe("work-order API integration", () => {
       [workOrder.id],
     );
     expect(persisted.rows).toEqual([{ count: "2" }]);
+
+    const activityResponse = await request(testApp.app).get(
+      `/api/work-orders/${workOrder.id}/activity`,
+    );
+
+    expect(activityResponse.status).toBe(200);
+    expect(activityResponse.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "event",
+          eventType: "work_order_created",
+        }),
+        expect.objectContaining({
+          kind: "comment",
+          body: "Bearing wear confirmed during inspection.",
+        }),
+        expect.objectContaining({
+          kind: "comment",
+          body: "Replacement bearing has been ordered.",
+        }),
+      ]),
+    );
+    expect(activityResponse.body.data).toHaveLength(3);
   });
 });

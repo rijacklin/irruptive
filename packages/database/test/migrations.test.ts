@@ -35,6 +35,7 @@ describe("database migrations", () => {
           'auth_verifications',
           'comments',
           'users',
+          'work_order_events',
           'work_orders'
         )
       ORDER BY table_name
@@ -46,6 +47,7 @@ describe("database migrations", () => {
       "auth_verifications",
       "comments",
       "users",
+      "work_order_events",
       "work_orders",
     ]);
   });

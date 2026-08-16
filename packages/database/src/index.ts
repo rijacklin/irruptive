@@ -27,5 +27,15 @@ export type {
 export { UserRepository } from "./repositories/user.repository.js";
 
 export type { ListUsersInput, User } from "./repositories/user.repository.js";
+export {
+  WorkOrderEventRepository,
+  workOrderEventTypes,
+} from "./repositories/work-order-event.repository.js";
+
+export type {
+  CreateWorkOrderEventInput,
+  WorkOrderEvent,
+  WorkOrderEventType,
+} from "./repositories/work-order-event.repository.js";
 
 export type { Pool } from "pg";

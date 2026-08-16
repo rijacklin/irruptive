@@ -8,6 +8,8 @@ import type { UserService } from "./services/user-service.js";
 import { createCommentRouter } from "./routes/comment-routes.js";
 import { createWorkOrderRouter } from "./routes/work-order-routes.js";
 import { createUserRouter } from "./routes/user-routes.js";
+import type { WorkOrderActivityService } from "./services/work-order-activity-service.js";
+import { createWorkOrderActivityRouter } from "./routes/work-order-activity-routes.js";
 import { notFoundHandler } from "./middleware/not-found-handler.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import {
@@ -22,6 +24,7 @@ export interface AppDependencies {
   authHandler: RequestHandler;
   resolveSession: SessionResolver;
   webOrigin: string;
+  workOrderActivityService: WorkOrderActivityService;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -50,6 +53,10 @@ export function createApp(dependencies: AppDependencies) {
   );
   app.use("/api/work-orders", createCommentRouter(dependencies.commentService));
   app.use("/api/users", createUserRouter(dependencies.userService));
+  app.use(
+    "/api/work-orders",
+    createWorkOrderActivityRouter(dependencies.workOrderActivityService),
+  );
 
   app.use(notFoundHandler);
   app.use(errorHandler);

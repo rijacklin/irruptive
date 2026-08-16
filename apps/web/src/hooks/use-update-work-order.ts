@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UpdateWorkOrderRequest } from "@irruptive/shared";
 
 import { updateWorkOrder } from "@/api/work-order";
+import { workOrderActivityQueryKey } from "@/hooks/use-work-order-activity";
 
 export function useUpdateWorkOrder(id: string) {
   const queryClient = useQueryClient();
@@ -14,6 +15,10 @@ export function useUpdateWorkOrder(id: string) {
       await queryClient.invalidateQueries({
         queryKey: ["work-orders"],
         predicate: (query) => typeof query.queryKey[1] !== "string",
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: workOrderActivityQueryKey(id),
       });
     },
   });

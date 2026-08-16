@@ -10,6 +10,7 @@ import type {
   GetWorkOrderResponse,
   ListCommentsResponse,
   ListUsersResponse,
+  ListWorkOrderActivityResponse,
   UpdateWorkOrderResponse,
   UserResponse,
 } from "@irruptive/shared";
@@ -22,6 +23,7 @@ import {
 import { createComment, listComments } from "@/api/comment";
 import { listUsers } from "@/api/user";
 import { authClient } from "@/lib/auth-client";
+import { listWorkOrderActivity } from "@/api/work-order-activity";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
 
 vi.mock("@/lib/auth-client", () => ({
@@ -63,6 +65,15 @@ const technician: UserResponse = {
   role: "technician",
   createdAt: "2026-08-14T11:00:00.000Z",
 };
+
+vi.mock("@/api/work-order-activity", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/api/work-order-activity")>();
+  return {
+    ...actual,
+    listWorkOrderActivity: vi.fn(),
+  };
+});
 
 const response: GetWorkOrderResponse = {
   data: {
@@ -129,6 +140,18 @@ beforeEach(() => {
     error: null,
     refetch: vi.fn(),
   });
+  const activity: ListWorkOrderActivityResponse = {
+    data: [
+      {
+        kind: "event",
+        id: "d37786d8-54f1-43f0-8604-82c51d017178",
+        eventType: "work_order_created",
+        eventData: { status: "open" },
+        createdAt: response.data.createdAt,
+      },
+    ],
+  };
+  vi.mocked(listWorkOrderActivity).mockResolvedValue(activity);
 });
 
 afterEach(() => {
@@ -185,6 +208,10 @@ describe("WorkOrderDetailsPage", () => {
     expect(
       screen.getByRole("combobox", { name: "Assignee" }),
     ).toHaveTextContent("Unassigned");
+    expect(
+      screen.getByRole("heading", { name: "Activity" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Work order created")).toBeInTheDocument();
 
     expect(getWorkOrder).toHaveBeenCalledWith(
       response.data.id,

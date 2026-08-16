@@ -5,6 +5,7 @@ import {
   CommentRepository,
   createDatabasePool,
   UserRepository,
+  WorkOrderEventRepository,
   WorkOrderRepository,
 } from "@irruptive/database";
 import { createApp } from "../app.js";
@@ -13,6 +14,7 @@ import { CommentService } from "../services/comment-service.js";
 import { UserService } from "../services/user-service.js";
 import { createAuth } from "../auth.js";
 import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
+import { WorkOrderActivityService } from "../services/work-order-activity-service.js";
 
 loadDotenv({
   path: new URL("../../../../.env", import.meta.url),
@@ -46,6 +48,7 @@ export async function createIntegrationTestApp(
   const workOrderRepository = new WorkOrderRepository(pool);
   const commentRepository = new CommentRepository(pool);
   const userRepository = new UserRepository(pool);
+  const workOrderEventRepository = new WorkOrderEventRepository(pool);
   const workOrderService = new WorkOrderService(
     workOrderRepository,
     userRepository,
@@ -55,6 +58,11 @@ export async function createIntegrationTestApp(
     workOrderRepository,
   );
   const userService = new UserService(userRepository);
+  const workOrderActivityService = new WorkOrderActivityService(
+    workOrderRepository,
+    commentRepository,
+    workOrderEventRepository,
+  );
   const auth = createAuth(pool, {
     baseUrl: "http://localhost:3000",
     secret: "test-secret-with-at-least-thirty-two-characters",
@@ -66,6 +74,7 @@ export async function createIntegrationTestApp(
     workOrderService,
     commentService,
     userService,
+    workOrderActivityService,
     authHandler: toNodeHandler(auth),
     resolveSession: options.useBetterAuthSessions
       ? (headers) => auth.api.getSession({ headers })

@@ -5,6 +5,7 @@ import type {
 } from "@irruptive/shared";
 import { createComment } from "@/api/comment";
 import { commentsQueryKey } from "@/hooks/use-comments";
+import { workOrderActivityQueryKey } from "@/hooks/use-work-order-activity";
 
 export function useCreateComment(workOrderId: string) {
   const queryClient = useQueryClient();
@@ -12,13 +13,17 @@ export function useCreateComment(workOrderId: string) {
   return useMutation({
     mutationFn: (input: CreateCommentRequest) =>
       createComment(workOrderId, input),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       queryClient.setQueryData<ListCommentsResponse>(
         commentsQueryKey(workOrderId),
         (current) => ({
           data: [...(current?.data ?? []), response.data],
         }),
       );
+
+      await queryClient.invalidateQueries({
+        queryKey: workOrderActivityQueryKey(workOrderId),
+      });
     },
   });
 }

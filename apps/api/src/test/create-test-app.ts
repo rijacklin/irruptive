@@ -11,6 +11,10 @@ import {
 } from "../services/work-order-service.js";
 import { UserService, type UserListStore } from "../services/user-service.js";
 import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
+import {
+  WorkOrderActivityService,
+  type ActivityEventStore,
+} from "../services/work-order-activity-service.js";
 
 const defaultActor: AuthorizationActor = {
   id: "234173b3-13a5-43c8-baf7-bf06640cf7fd",
@@ -36,10 +40,19 @@ export function createTestApp(actor: AuthorizationActor | null = defaultActor) {
     list: vi.fn(),
   };
 
+  const eventStore: ActivityEventStore = {
+    listByWorkOrderId: vi.fn(),
+  };
+
   const app = createApp({
     workOrderService: new WorkOrderService(store, userStore),
     commentService: new CommentService(commentStore, store),
     userService: new UserService(userStore),
+    workOrderActivityService: new WorkOrderActivityService(
+      store,
+      commentStore,
+      eventStore,
+    ),
     authHandler: (_request, response) => {
       response.status(404).end();
     },
@@ -48,5 +61,5 @@ export function createTestApp(actor: AuthorizationActor | null = defaultActor) {
     webOrigin: "http://localhost:5173",
   });
 
-  return { app, store, commentStore, userStore };
+  return { app, store, commentStore, userStore, eventStore };
 }
