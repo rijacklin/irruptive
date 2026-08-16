@@ -4,9 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+  CommentResponse,
   GetWorkOrderResponse,
+  ListCommentsResponse,
   UpdateWorkOrderResponse,
 } from "@irruptive/shared";
 
@@ -15,6 +17,7 @@ import {
   updateWorkOrder,
   WorkOrderApiError,
 } from "@/api/work-order";
+import { createComment, listComments } from "@/api/comment";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
 
 vi.mock("@/api/work-order", async (importOriginal) => {
@@ -23,6 +26,15 @@ vi.mock("@/api/work-order", async (importOriginal) => {
     ...actual,
     getWorkOrder: vi.fn(),
     updateWorkOrder: vi.fn(),
+  };
+});
+
+vi.mock("@/api/comment", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api/comment")>();
+  return {
+    ...actual,
+    createComment: vi.fn(),
+    listComments: vi.fn(),
   };
 });
 
@@ -49,6 +61,19 @@ const updatedResponse: UpdateWorkOrderResponse = {
     updatedAt: "2026-08-15T13:00:00.000Z",
   },
 };
+
+const existingComment: CommentResponse = {
+  id: "8e33a153-d529-4e22-829e-e83d4f313d38",
+  workOrderId: response.data.id,
+  userId: response.data.createdBy,
+  body: "The drive bearing is visibly worn.",
+  createdAt: "2026-08-14T12:05:00.000Z",
+};
+
+beforeEach(() => {
+  const comments: ListCommentsResponse = { data: [] };
+  vi.mocked(listComments).mockResolvedValue(comments);
+});
 
 afterEach(() => {
   cleanup();
@@ -184,5 +209,41 @@ describe("WorkOrderDetailsPage", () => {
       status: "blocked",
       priority: "high",
     });
+  });
+
+  it("renders comments and adds a normalized comment", async () => {
+    const addedComment: CommentResponse = {
+      ...existingComment,
+      id: "1293a583-3b77-46b0-a54e-a490551b2c5e",
+      body: "Replacement bearing has been ordered.",
+      createdAt: "2026-08-14T12:10:00.000Z",
+    };
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+    vi.mocked(listComments).mockResolvedValue({ data: [existingComment] });
+    vi.mocked(createComment).mockResolvedValue({ data: addedComment });
+    renderDetailsPage();
+
+    expect(await screen.findByText(existingComment.body)).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByRole("textbox", { name: "Your user ID" }),
+      `  ${response.data.createdBy}  `,
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Add a comment" }),
+      `  ${addedComment.body}  `,
+    );
+    await user.click(screen.getByRole("button", { name: "Add comment" }));
+
+    expect(createComment).toHaveBeenCalledWith(response.data.id, {
+      userId: response.data.createdBy,
+      body: addedComment.body,
+    });
+    expect(await screen.findByText(addedComment.body)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Comment added.");
+    expect(screen.getByRole("textbox", { name: "Add a comment" })).toHaveValue(
+      "",
+    );
   });
 });

@@ -2,12 +2,15 @@ import cors from "cors";
 import express from "express";
 import type { HealthResponse } from "@irruptive/shared";
 import type { WorkOrderService } from "./services/work-order-service.js";
+import type { CommentService } from "./services/comment-service.js";
+import { createCommentRouter } from "./routes/comment-routes.js";
 import { createWorkOrderRouter } from "./routes/work-order-routes.js";
 import { notFoundHandler } from "./middleware/not-found-handler.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 export interface AppDependencies {
   workOrderService: WorkOrderService;
+  commentService: CommentService;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -26,6 +29,7 @@ export function createApp(dependencies: AppDependencies) {
     "/api/work-orders",
     createWorkOrderRouter(dependencies.workOrderService),
   );
+  app.use("/api/work-orders", createCommentRouter(dependencies.commentService));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

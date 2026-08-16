@@ -17,4 +17,11 @@ export type {
   WorkOrder,
 } from "./repositories/work-order.repository.js";
 
+export { CommentRepository } from "./repositories/comment.repository.js";
+
+export type {
+  Comment,
+  CreateCommentInput,
+} from "./repositories/comment.repository.js";
+
 export type { Pool } from "pg";
