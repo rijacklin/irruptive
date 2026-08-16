@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { config } from "dotenv";
 import { Pool } from "pg";
 import {
+  WorkOrderEventRepository,
   WorkOrderRepository,
   type CreateWorkOrderInput,
   type WorkOrder,
@@ -21,6 +22,7 @@ if (!connectionString) {
 
 const pool = new Pool({ connectionString });
 const repository = new WorkOrderRepository(pool);
+const eventRepository = new WorkOrderEventRepository(pool);
 
 beforeAll(async () => {
   await pool.query("select 1");
@@ -85,6 +87,25 @@ describe("WorkOrderRepository", () => {
       expect(workOrder.id).toEqual(expect.any(String));
       expect(workOrder.createdAt).toBeInstanceOf(Date);
       expect(workOrder.updatedAt).toBeInstanceOf(Date);
+
+      await expect(
+        eventRepository.listByWorkOrderId(workOrder.id),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          workOrderId: workOrder.id,
+          eventType: "work_order_created",
+          eventData: {
+            title: workOrder.title,
+            description: workOrder.description,
+            status: "open",
+            priority: "medium",
+            category: null,
+            createdBy,
+            assignedTo: null,
+          },
+          createdAt: expect.any(Date),
+        }),
+      ]);
     });
 
     it("creates a work order with optional values", async () => {
@@ -274,6 +295,40 @@ describe("WorkOrderRepository", () => {
         updatedAt: expect.any(Date),
       });
       expectUpdatedAfter(updated, created);
+
+      const events = await eventRepository.listByWorkOrderId(created.id);
+
+      expect(events.slice(1)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            eventType: "status_changed",
+            eventData: { previous: "open", current: "assigned" },
+          }),
+          expect.objectContaining({
+            eventType: "priority_changed",
+            eventData: { previous: "medium", current: "high" },
+          }),
+          expect.objectContaining({
+            eventType: "category_changed",
+            eventData: { previous: null, current: "Mechanical" },
+          }),
+          expect.objectContaining({
+            eventType: "assignment_changed",
+            eventData: { previous: null, current: assignedTo },
+          }),
+        ]),
+      );
+      expect(events.slice(1)).toHaveLength(4);
+    });
+
+    it("does not record an event for an unchanged value", async () => {
+      const created = await createWorkOrder();
+
+      await repository.update(created.id, { priority: created.priority });
+
+      await expect(
+        eventRepository.listByWorkOrderId(created.id),
+      ).resolves.toHaveLength(1);
     });
 
     it("rejects an update with no fields", async () => {

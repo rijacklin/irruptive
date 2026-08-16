@@ -29,13 +29,19 @@ describe("database migrations", () => {
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-        AND table_name IN ('comments', 'users', 'work_orders')
+        AND table_name IN (
+          'comments',
+          'users',
+          'work_order_events',
+          'work_orders'
+        )
       ORDER BY table_name
     `);
 
     expect(result.rows.map((row) => row.table_name)).toEqual([
       "comments",
       "users",
+      "work_order_events",
       "work_orders",
     ]);
   });
