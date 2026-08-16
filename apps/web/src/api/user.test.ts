@@ -20,6 +20,7 @@ describe("listUsers", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       new URL("http://localhost:3000/api/users?role=technician"),
       {
+        credentials: "include",
         headers: { Accept: "application/json" },
       },
     );

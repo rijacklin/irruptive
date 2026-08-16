@@ -25,6 +25,7 @@ export async function listComments(
     apiBaseUrl,
   );
   const response = await fetch(url, {
+    credentials: "include",
     headers: { Accept: "application/json" },
     ...(signal !== undefined ? { signal } : {}),
   });
@@ -49,6 +50,7 @@ export async function createComment(
   );
   const response = await fetch(url, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

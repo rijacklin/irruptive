@@ -38,6 +38,7 @@ describe("comment API", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       new URL(`http://localhost:3000/api/work-orders/${workOrderId}/comments`),
       {
+        credentials: "include",
         headers: { Accept: "application/json" },
         signal,
       },
@@ -61,6 +62,7 @@ describe("comment API", () => {
       new URL(`http://localhost:3000/api/work-orders/${workOrderId}/comments`),
       {
         method: "POST",
+        credentials: "include",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",

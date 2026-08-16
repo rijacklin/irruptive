@@ -1,4 +1,5 @@
 import { config as loadDotenv } from "dotenv";
+import { toNodeHandler } from "better-auth/node";
 import {
   checkDatabaseConnection,
   CommentRepository,
@@ -10,13 +11,16 @@ import { createApp } from "../app.js";
 import { WorkOrderService } from "../services/work-order-service.js";
 import { CommentService } from "../services/comment-service.js";
 import { UserService } from "../services/user-service.js";
+import { createAuth } from "../auth.js";
 
 loadDotenv({
   path: new URL("../../../../.env", import.meta.url),
   quiet: true,
 });
 
-export async function createIntegrationTestApp() {
+export async function createIntegrationTestApp(
+  options: { allowSignUp?: boolean } = {},
+) {
   const connectionString = process.env.TEST_DATABASE_URL;
 
   if (!connectionString) {
@@ -50,7 +54,19 @@ export async function createIntegrationTestApp() {
     workOrderRepository,
   );
   const userService = new UserService(userRepository);
-  const app = createApp({ workOrderService, commentService, userService });
+  const auth = createAuth(pool, {
+    baseUrl: "http://localhost:3000",
+    secret: "test-secret-with-at-least-thirty-two-characters",
+    trustedOrigins: ["http://localhost:5173"],
+    allowSignUp: options.allowSignUp ?? true,
+  });
+  const app = createApp({
+    workOrderService,
+    commentService,
+    userService,
+    authHandler: toNodeHandler(auth),
+    webOrigin: "http://localhost:5173",
+  });
 
-  return { app, pool };
+  return { app, pool, auth };
 }

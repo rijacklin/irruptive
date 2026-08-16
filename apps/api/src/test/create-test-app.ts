@@ -34,6 +34,10 @@ export function createTestApp() {
     workOrderService: new WorkOrderService(store, userStore),
     commentService: new CommentService(commentStore, store),
     userService: new UserService(userStore),
+    authHandler: (_request, response) => {
+      response.status(404).end();
+    },
+    webOrigin: "http://localhost:5173",
   });
 
   return { app, store, commentStore, userStore };

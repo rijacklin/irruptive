@@ -24,6 +24,7 @@ export async function listWorkOrders(
   url.searchParams.set("offset", String(params.offset));
 
   const response = await fetch(url, {
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -54,6 +55,7 @@ export async function getWorkOrder(
   const url = new URL(`/api/work-orders/${encodeURIComponent(id)}`, apiBaseUrl);
 
   const response = await fetch(url, {
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -77,6 +79,7 @@ export async function createWorkOrder(
 
   const response = await fetch(url, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -102,6 +105,7 @@ export async function updateWorkOrder(
 
   const response = await fetch(url, {
     method: "PATCH",
+    credentials: "include",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

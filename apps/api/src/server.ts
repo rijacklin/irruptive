@@ -1,4 +1,5 @@
 import { config as loadDotenv } from "dotenv";
+import { toNodeHandler } from "better-auth/node";
 import {
   checkDatabaseConnection,
   CommentRepository,
@@ -11,6 +12,7 @@ import { loadEnvironment } from "./config.js";
 import { WorkOrderService } from "./services/work-order-service.js";
 import { CommentService } from "./services/comment-service.js";
 import { UserService } from "./services/user-service.js";
+import { createAuth } from "./auth.js";
 
 loadDotenv({
   // fix to resolve .env in root dir
@@ -24,6 +26,12 @@ const pool = createDatabasePool({ connectionString: environment.DATABASE_URL });
 await checkDatabaseConnection(pool);
 console.log("Database connection established");
 
+const auth = createAuth(pool, {
+  baseUrl: environment.BETTER_AUTH_URL,
+  secret: environment.BETTER_AUTH_SECRET,
+  trustedOrigins: [environment.WEB_ORIGIN],
+});
+
 const workOrderRepository = new WorkOrderRepository(pool);
 const commentRepository = new CommentRepository(pool);
 const userRepository = new UserRepository(pool);
@@ -36,7 +44,13 @@ const commentService = new CommentService(
   workOrderRepository,
 );
 const userService = new UserService(userRepository);
-const app = createApp({ workOrderService, commentService, userService });
+const app = createApp({
+  workOrderService,
+  commentService,
+  userService,
+  authHandler: toNodeHandler(auth),
+  webOrigin: environment.WEB_ORIGIN,
+});
 
 const server = app.listen(environment.API_PORT, environment.API_HOST, () => {
   console.log(

@@ -25,6 +25,20 @@ Start PostgreSQL, wait for it to become healthy, and apply the existing database
 docker compose up -d postgres
 ```
 
+Generate a strong Better Auth secret and place it in `.env`. The value must be
+at least 32 characters and must not be committed. Then create the initial local
+administrator after applying migrations:
+
+```bash
+npm run db:migrate
+npm run auth:bootstrap-admin
+```
+
+The bootstrap command reads `BOOTSTRAP_ADMIN_NAME`,
+`BOOTSTRAP_ADMIN_EMAIL`, and `BOOTSTRAP_ADMIN_PASSWORD` from `.env`. It creates
+the account only when that email does not already exist. Public signup is
+disabled; later user provisioning will be restricted to administrators.
+
 Start each application in a separate terminal:
 
 ```bash
@@ -46,6 +60,11 @@ Expected response:
 ```
 
 The API verifies its PostgreSQL connection before it begins listening. If PostgreSQL is unavailable or `DATABASE_URL` is invalid, API startup fails instead of reporting a misleading healthy state.
+
+Authentication is managed by Better Auth using email/password credentials and
+database-backed cookie sessions. Passwords are hashed by Better Auth and session
+cookies are HttpOnly. `WEB_ORIGIN` controls credentialed CORS access, while
+`BETTER_AUTH_URL` is the public URL of the API authentication endpoints.
 
 ### PostgreSQL port conflicts
 

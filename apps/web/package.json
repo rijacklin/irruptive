@@ -17,6 +17,7 @@
     "@irruptive/shared": "^0.1.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.84.2",
+    "better-auth": "^1.6.29",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "react": "^19.1.1",

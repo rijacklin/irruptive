@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import type { RequestHandler } from "express";
 import type { HealthResponse } from "@irruptive/shared";
 import type { WorkOrderService } from "./services/work-order-service.js";
 import type { CommentService } from "./services/comment-service.js";
@@ -14,13 +15,21 @@ export interface AppDependencies {
   workOrderService: WorkOrderService;
   commentService: CommentService;
   userService: UserService;
+  authHandler: RequestHandler;
+  webOrigin: string;
 }
 
 export function createApp(dependencies: AppDependencies) {
   const app = express();
 
   app.disable("x-powered-by");
-  app.use(cors());
+  app.use(
+    cors({
+      origin: dependencies.webOrigin,
+      credentials: true,
+    }),
+  );
+  app.all("/api/auth/*splat", dependencies.authHandler);
   app.use(express.json());
 
   app.get("/health", (_request, response) => {
