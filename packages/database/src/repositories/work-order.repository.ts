@@ -61,7 +61,6 @@ const workOrderColumns = `
   updated_at
 `;
 
-// converts db conventions to domain conventions
 function mapWorkOrderRow(row: WorkOrderRow): WorkOrder {
   return {
     id: row.id,

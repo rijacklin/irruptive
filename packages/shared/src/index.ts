@@ -70,3 +70,25 @@ export interface UpdateWorkOrderRequest {
 export interface UpdateWorkOrderResponse {
   data: WorkOrderResponse;
 }
+
+export interface CommentResponse {
+  id: string;
+  workOrderId: string;
+  userId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface ListCommentsResponse {
+  data: CommentResponse[];
+}
+
+export interface CreateCommentRequest {
+  // TODO(auth): Remove when derived from the authenticated user.
+  userId: string;
+  body: string;
+}
+
+export interface CreateCommentResponse {
+  data: CommentResponse;
+}

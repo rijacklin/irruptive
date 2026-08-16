@@ -6,6 +6,7 @@ import {
   WorkOrderStatusBadge,
 } from "@/components/work-orders/work-order-badges";
 import { WorkOrderUpdateForm } from "@/components/work-orders/work-order-update-form";
+import { WorkOrderComments } from "@/components/work-orders/work-order-comments";
 import { useWorkOrder } from "@/hooks/use-work-order";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -158,6 +159,8 @@ export function WorkOrderDetailsPage() {
           </div>
         </dl>
       </section>
+
+      <WorkOrderComments workOrderId={workOrder.id} />
     </main>
   );
 }

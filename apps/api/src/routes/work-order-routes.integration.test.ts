@@ -26,6 +26,7 @@ afterEach(async () => {
     return;
   }
 
+  await testApp.pool.query("DELETE FROM comments");
   await testApp.pool.query("DELETE FROM work_orders");
   await testApp.pool.query("DELETE FROM users");
 });
@@ -241,5 +242,64 @@ describe("work-order API integration", () => {
       "SELECT COUNT(*) AS count FROM work_orders",
     );
     expect(persisted.rows).toEqual([{ count: "0" }]);
+  });
+
+  it("creates and lists persisted comments chronologically", async () => {
+    const createdBy = await createUser();
+    const workOrder = await createWorkOrder(
+      createdBy,
+      "Inspect conveyor drive bearing",
+    );
+
+    const firstResponse = await request(testApp.app)
+      .post(`/api/work-orders/${workOrder.id}/comments`)
+      .send({
+        userId: createdBy,
+        body: "Bearing wear confirmed during inspection.",
+      });
+    const secondResponse = await request(testApp.app)
+      .post(`/api/work-orders/${workOrder.id}/comments`)
+      .send({
+        userId: createdBy,
+        body: "Replacement bearing has been ordered.",
+      });
+
+    expect(firstResponse.status).toBe(201);
+    expect(secondResponse.status).toBe(201);
+
+    await testApp.pool.query(
+      `
+        UPDATE comments
+        SET created_at = CASE id
+          WHEN $1 THEN $3::timestamptz
+          WHEN $2 THEN $4::timestamptz
+        END
+        WHERE id IN ($1, $2)
+      `,
+      [
+        firstResponse.body.data.id,
+        secondResponse.body.data.id,
+        "2026-08-16T14:00:00.000Z",
+        "2026-08-16T15:00:00.000Z",
+      ],
+    );
+
+    const listResponse = await request(testApp.app).get(
+      `/api/work-orders/${workOrder.id}/comments`,
+    );
+
+    expect(listResponse.status).toBe(200);
+    expect(
+      listResponse.body.data.map((item: { body: string }) => item.body),
+    ).toEqual([
+      "Bearing wear confirmed during inspection.",
+      "Replacement bearing has been ordered.",
+    ]);
+
+    const persisted = await testApp.pool.query<{ count: string }>(
+      "SELECT COUNT(*) AS count FROM comments WHERE work_order_id = $1",
+      [workOrder.id],
+    );
+    expect(persisted.rows).toEqual([{ count: "2" }]);
   });
 });

@@ -24,16 +24,17 @@ describe("database migrations", () => {
     await pool.end();
   });
 
-  it("creates the users and work_orders tables", async () => {
+  it("creates the application tables", async () => {
     const result = await pool.query<{ table_name: string }>(`
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-        AND table_name IN ('users', 'work_orders')
+        AND table_name IN ('comments', 'users', 'work_orders')
       ORDER BY table_name
     `);
 
     expect(result.rows.map((row) => row.table_name)).toEqual([
+      "comments",
       "users",
       "work_orders",
     ]);

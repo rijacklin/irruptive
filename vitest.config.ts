@@ -9,14 +9,15 @@ export default defineConfig({
     },
   },
   test: {
+    // Integration suites share TEST_DATABASE_URL, and UI suites use global DOM state.
+    fileParallelism: false,
+    maxWorkers: 1,
     projects: [
       {
         extends: true,
         test: {
           name: "node",
           environment: "node",
-          // Database-backed suites share TEST_DATABASE_URL and clean shared tables.
-          fileParallelism: false,
           include: [
             "apps/api/**/*.test.ts",
             "apps/worker/**/*.test.ts",
