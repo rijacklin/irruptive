@@ -3,14 +3,17 @@ import express from "express";
 import type { HealthResponse } from "@irruptive/shared";
 import type { WorkOrderService } from "./services/work-order-service.js";
 import type { CommentService } from "./services/comment-service.js";
+import type { UserService } from "./services/user-service.js";
 import { createCommentRouter } from "./routes/comment-routes.js";
 import { createWorkOrderRouter } from "./routes/work-order-routes.js";
+import { createUserRouter } from "./routes/user-routes.js";
 import { notFoundHandler } from "./middleware/not-found-handler.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 export interface AppDependencies {
   workOrderService: WorkOrderService;
   commentService: CommentService;
+  userService: UserService;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -30,6 +33,7 @@ export function createApp(dependencies: AppDependencies) {
     createWorkOrderRouter(dependencies.workOrderService),
   );
   app.use("/api/work-orders", createCommentRouter(dependencies.commentService));
+  app.use("/api/users", createUserRouter(dependencies.userService));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

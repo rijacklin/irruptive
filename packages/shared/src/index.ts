@@ -4,6 +4,27 @@ export interface HealthResponse {
   status: "ok";
 }
 
+export const userRoles = [
+  "requester",
+  "technician",
+  "supervisor",
+  "admin",
+] as const;
+
+export type UserRole = (typeof userRoles)[number];
+
+export interface UserResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface ListUsersResponse {
+  data: UserResponse[];
+}
+
 export const workOrderStatuses = [
   "open",
   "assigned",
@@ -65,6 +86,7 @@ export interface CreateWorkOrderResponse {
 export interface UpdateWorkOrderRequest {
   status?: WorkOrderStatus;
   priority?: WorkOrderPriority;
+  assignedTo?: string | null;
 }
 
 export interface UpdateWorkOrderResponse {

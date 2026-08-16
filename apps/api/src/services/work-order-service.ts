@@ -4,7 +4,11 @@ import type {
   UpdateWorkOrderInput,
   WorkOrder,
 } from "@irruptive/database";
-import { WorkOrderNotFoundError } from "../errors/application-error.js";
+import type { User } from "@irruptive/database";
+import {
+  AssigneeNotEligibleError,
+  WorkOrderNotFoundError,
+} from "../errors/application-error.js";
 
 export interface WorkOrderStore {
   create(input: CreateWorkOrderInput): Promise<WorkOrder>;
@@ -14,8 +18,15 @@ export interface WorkOrderStore {
   delete(id: string): Promise<boolean>;
 }
 
+export interface AssigneeStore {
+  findAssignableById(id: string): Promise<User | null>;
+}
+
 export class WorkOrderService {
-  constructor(private readonly workOrders: WorkOrderStore) {}
+  constructor(
+    private readonly workOrders: WorkOrderStore,
+    private readonly assignees: AssigneeStore,
+  ) {}
 
   async create(input: CreateWorkOrderInput): Promise<WorkOrder> {
     return this.workOrders.create(input);
@@ -36,6 +47,16 @@ export class WorkOrderService {
   }
 
   async update(id: string, input: UpdateWorkOrderInput): Promise<WorkOrder> {
+    if (input.assignedTo) {
+      const assignee = await this.assignees.findAssignableById(
+        input.assignedTo,
+      );
+
+      if (!assignee) {
+        throw new AssigneeNotEligibleError(input.assignedTo);
+      }
+    }
+
     const workOrder = await this.workOrders.update(id, input);
 
     if (!workOrder) {

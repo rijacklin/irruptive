@@ -3,12 +3,14 @@ import {
   checkDatabaseConnection,
   CommentRepository,
   createDatabasePool,
+  UserRepository,
   WorkOrderRepository,
 } from "@irruptive/database";
 import { createApp } from "./app.js";
 import { loadEnvironment } from "./config.js";
 import { WorkOrderService } from "./services/work-order-service.js";
 import { CommentService } from "./services/comment-service.js";
+import { UserService } from "./services/user-service.js";
 
 loadDotenv({
   // fix to resolve .env in root dir
@@ -24,12 +26,17 @@ console.log("Database connection established");
 
 const workOrderRepository = new WorkOrderRepository(pool);
 const commentRepository = new CommentRepository(pool);
-const workOrderService = new WorkOrderService(workOrderRepository);
+const userRepository = new UserRepository(pool);
+const workOrderService = new WorkOrderService(
+  workOrderRepository,
+  userRepository,
+);
 const commentService = new CommentService(
   commentRepository,
   workOrderRepository,
 );
-const app = createApp({ workOrderService, commentService });
+const userService = new UserService(userRepository);
+const app = createApp({ workOrderService, commentService, userService });
 
 const server = app.listen(environment.API_PORT, environment.API_HOST, () => {
   console.log(

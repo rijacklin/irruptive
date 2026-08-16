@@ -51,6 +51,20 @@ async function createUser(): Promise<string> {
   return id;
 }
 
+async function createTechnician(): Promise<string> {
+  const id = randomUUID();
+
+  await testApp.pool.query(
+    `
+      INSERT INTO users (id, name, email, role)
+      VALUES ($1, $2, $3, 'technician')
+    `,
+    [id, "API Integration Technician", `${id}@example.com`],
+  );
+
+  return id;
+}
+
 async function createWorkOrder(
   createdBy: string,
   title: string,
@@ -164,6 +178,49 @@ describe("work-order API integration", () => {
     expect(persisted.rows).toEqual([
       { status: "in_progress", priority: "critical" },
     ]);
+  });
+
+  it("lists technicians and assigns one to a work order", async () => {
+    const createdBy = await createUser();
+    const technicianId = await createTechnician();
+    const workOrder = await createWorkOrder(createdBy, "Inspect drive motor");
+
+    const usersResponse = await request(testApp.app).get(
+      "/api/users?role=technician",
+    );
+
+    expect(usersResponse.status).toBe(200);
+    expect(usersResponse.body.data).toEqual([
+      expect.objectContaining({
+        id: technicianId,
+        role: "technician",
+      }),
+    ]);
+
+    const assignmentResponse = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ assignedTo: technicianId });
+
+    expect(assignmentResponse.status).toBe(200);
+    expect(assignmentResponse.body.data.assignedTo).toBe(technicianId);
+
+    const persisted = await testApp.pool.query<{ assigned_to: string }>(
+      "SELECT assigned_to FROM work_orders WHERE id = $1",
+      [workOrder.id],
+    );
+    expect(persisted.rows).toEqual([{ assigned_to: technicianId }]);
+  });
+
+  it("rejects assigning a requester", async () => {
+    const createdBy = await createUser();
+    const workOrder = await createWorkOrder(createdBy, "Inspect belt tension");
+
+    const response = await request(testApp.app)
+      .patch(`/api/work-orders/${workOrder.id}`)
+      .send({ assignedTo: createdBy });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("ASSIGNEE_NOT_ELIGIBLE");
   });
 
   it("deletes a persisted work order", async () => {

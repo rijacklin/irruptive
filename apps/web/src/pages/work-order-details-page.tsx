@@ -100,6 +100,7 @@ export function WorkOrderDetailsPage() {
         id={workOrder.id}
         status={workOrder.status}
         priority={workOrder.priority}
+        assignedTo={workOrder.assignedTo}
       />
 
       <section

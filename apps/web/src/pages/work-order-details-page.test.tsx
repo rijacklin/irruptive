@@ -9,7 +9,9 @@ import type {
   CommentResponse,
   GetWorkOrderResponse,
   ListCommentsResponse,
+  ListUsersResponse,
   UpdateWorkOrderResponse,
+  UserResponse,
 } from "@irruptive/shared";
 
 import {
@@ -18,6 +20,7 @@ import {
   WorkOrderApiError,
 } from "@/api/work-order";
 import { createComment, listComments } from "@/api/comment";
+import { listUsers } from "@/api/user";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
 
 vi.mock("@/api/work-order", async (importOriginal) => {
@@ -37,6 +40,22 @@ vi.mock("@/api/comment", async (importOriginal) => {
     listComments: vi.fn(),
   };
 });
+
+vi.mock("@/api/user", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api/user")>();
+  return {
+    ...actual,
+    listUsers: vi.fn(),
+  };
+});
+
+const technician: UserResponse = {
+  id: "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc",
+  name: "Alex Technician",
+  email: "alex@example.com",
+  role: "technician",
+  createdAt: "2026-08-14T11:00:00.000Z",
+};
 
 const response: GetWorkOrderResponse = {
   data: {
@@ -72,7 +91,9 @@ const existingComment: CommentResponse = {
 
 beforeEach(() => {
   const comments: ListCommentsResponse = { data: [] };
+  const technicians: ListUsersResponse = { data: [technician] };
   vi.mocked(listComments).mockResolvedValue(comments);
+  vi.mocked(listUsers).mockResolvedValue(technicians);
 });
 
 afterEach(() => {
@@ -126,7 +147,9 @@ describe("WorkOrderDetailsPage", () => {
       screen.getByRole("combobox", { name: "Priority" }),
     ).toHaveTextContent("High");
     expect(screen.getByText("Mechanical")).toBeInTheDocument();
-    expect(screen.getByText("Unassigned")).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Assignee" }),
+    ).toHaveTextContent("Unassigned");
 
     expect(getWorkOrder).toHaveBeenCalledWith(
       response.data.id,
@@ -207,8 +230,34 @@ describe("WorkOrderDetailsPage", () => {
     expect(statusSelect).toHaveTextContent("Blocked");
     expect(updateWorkOrder).toHaveBeenCalledWith(response.data.id, {
       status: "blocked",
-      priority: "high",
     });
+  });
+
+  it("assigns a technician", async () => {
+    vi.mocked(getWorkOrder).mockResolvedValue(response);
+    vi.mocked(updateWorkOrder).mockResolvedValue({
+      data: {
+        ...response.data,
+        assignedTo: technician.id,
+        updatedAt: "2026-08-15T13:00:00.000Z",
+      },
+    });
+    renderDetailsPage();
+
+    const user = userEvent.setup();
+    const assigneeSelect = await screen.findByRole("combobox", {
+      name: "Assignee",
+    });
+
+    await user.click(assigneeSelect);
+    await user.click(screen.getByRole("option", { name: technician.name }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(updateWorkOrder).toHaveBeenCalledWith(response.data.id, {
+      assignedTo: technician.id,
+    });
+    expect(await screen.findByText("Work order updated.")).toBeInTheDocument();
+    expect(assigneeSelect).toHaveTextContent(technician.name);
   });
 
   it("renders comments and adds a normalized comment", async () => {

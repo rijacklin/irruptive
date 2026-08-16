@@ -24,4 +24,8 @@ export type {
   CreateCommentInput,
 } from "./repositories/comment.repository.js";
 
+export { UserRepository } from "./repositories/user.repository.js";
+
+export type { ListUsersInput, User } from "./repositories/user.repository.js";
+
 export type { Pool } from "pg";

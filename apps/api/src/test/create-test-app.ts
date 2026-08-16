@@ -6,8 +6,10 @@ import {
 } from "../services/comment-service.js";
 import {
   WorkOrderService,
+  type AssigneeStore,
   type WorkOrderStore,
 } from "../services/work-order-service.js";
+import { UserService, type UserListStore } from "../services/user-service.js";
 
 export function createTestApp() {
   const store: WorkOrderStore = {
@@ -23,10 +25,16 @@ export function createTestApp() {
     listByWorkOrderId: vi.fn(),
   };
 
+  const userStore: AssigneeStore & UserListStore = {
+    findAssignableById: vi.fn(),
+    list: vi.fn(),
+  };
+
   const app = createApp({
-    workOrderService: new WorkOrderService(store),
+    workOrderService: new WorkOrderService(store, userStore),
     commentService: new CommentService(commentStore, store),
+    userService: new UserService(userStore),
   });
 
-  return { app, store, commentStore };
+  return { app, store, commentStore, userStore };
 }

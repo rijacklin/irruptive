@@ -14,3 +14,13 @@ export class WorkOrderNotFoundError extends ApplicationError {
     super(404, "WORK_ORDER_NOT_FOUND", `Work order ${id} does not exist.`);
   }
 }
+
+export class AssigneeNotEligibleError extends ApplicationError {
+  constructor(id: string) {
+    super(
+      422,
+      "ASSIGNEE_NOT_ELIGIBLE",
+      `User ${id} is not eligible for work-order assignment.`,
+    );
+  }
+}

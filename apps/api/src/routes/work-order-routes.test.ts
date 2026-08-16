@@ -339,6 +339,45 @@ describe("PATCH /api/work-orders/:id", () => {
     expect(store.update).not.toHaveBeenCalled();
   });
 
+  it("assigns an eligible technician", async () => {
+    const { app, store, userStore } = createTestApp();
+    const assignedTo = "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc";
+
+    vi.mocked(userStore.findAssignableById).mockResolvedValue({
+      id: assignedTo,
+      name: "Alex Technician",
+      email: "alex@example.com",
+      role: "technician",
+      createdAt: new Date("2026-08-13T12:00:00.000Z"),
+    });
+    vi.mocked(store.update).mockResolvedValue({
+      ...workOrder,
+      assignedTo,
+    });
+
+    const response = await request(app)
+      .patch(`/api/work-orders/${workOrderId}`)
+      .send({ assignedTo });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.assignedTo).toBe(assignedTo);
+    expect(store.update).toHaveBeenCalledWith(workOrderId, { assignedTo });
+  });
+
+  it("rejects an ineligible assignee", async () => {
+    const { app, store, userStore } = createTestApp();
+    const assignedTo = "98bbd3ae-d7ab-46f4-b348-9f51b65fbadc";
+    vi.mocked(userStore.findAssignableById).mockResolvedValue(null);
+
+    const response = await request(app)
+      .patch(`/api/work-orders/${workOrderId}`)
+      .send({ assignedTo });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("ASSIGNEE_NOT_ELIGIBLE");
+    expect(store.update).not.toHaveBeenCalled();
+  });
+
   it("rejects unsupported fields", async () => {
     const { app, store } = createTestApp();
 
