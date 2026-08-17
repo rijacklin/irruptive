@@ -11,6 +11,7 @@ import type {
   ListCommentsResponse,
   ListUsersResponse,
   ListWorkOrderActivityResponse,
+  GetAIAnalysisResponse,
   UpdateWorkOrderResponse,
   UserResponse,
 } from "@irruptive/shared";
@@ -25,6 +26,7 @@ import { listUsers } from "@/api/user";
 import { authClient } from "@/lib/auth-client";
 import { listWorkOrderActivity } from "@/api/work-order-activity";
 import { WorkOrderDetailsPage } from "./work-order-details-page";
+import { createAIAnalysis, getAIAnalysis } from "@/api/ai-analysis";
 
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
@@ -75,6 +77,15 @@ vi.mock("@/api/work-order-activity", async (importOriginal) => {
   };
 });
 
+vi.mock("@/api/ai-analysis", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api/ai-analysis")>();
+  return {
+    ...actual,
+    createAIAnalysis: vi.fn(),
+    getAIAnalysis: vi.fn(),
+  };
+});
+
 const response: GetWorkOrderResponse = {
   data: {
     id: "6efd02fb-37ae-4685-b0c8-d7408afbf3b3",
@@ -108,6 +119,11 @@ const existingComment: CommentResponse = {
 };
 
 beforeEach(() => {
+  const emptyAnalysis: GetAIAnalysisResponse = { data: null };
+  vi.mocked(getAIAnalysis).mockResolvedValue(emptyAnalysis);
+  vi.mocked(createAIAnalysis).mockRejectedValue(
+    new Error("Unexpected analysis request"),
+  );
   const comments: ListCommentsResponse = { data: [] };
   const technicians: ListUsersResponse = { data: [technician] };
   vi.mocked(listComments).mockResolvedValue(comments);

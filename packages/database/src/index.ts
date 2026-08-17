@@ -32,6 +32,12 @@ export {
   workOrderEventTypes,
 } from "./repositories/work-order-event.repository.js";
 
+export { AIAnalysisRepository } from "./repositories/ai-analysis.repository.js";
+export type {
+  AIAnalysis,
+  CreateAIAnalysisInput,
+} from "./repositories/ai-analysis.repository.js";
+
 export type {
   CreateWorkOrderEventInput,
   WorkOrderEvent,

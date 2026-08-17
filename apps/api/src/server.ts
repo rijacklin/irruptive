@@ -7,6 +7,7 @@ import {
   UserRepository,
   WorkOrderEventRepository,
   WorkOrderRepository,
+  AIAnalysisRepository,
 } from "@irruptive/database";
 import { createApp } from "./app.js";
 import { loadEnvironment } from "./config.js";
@@ -15,6 +16,8 @@ import { CommentService } from "./services/comment-service.js";
 import { UserService } from "./services/user-service.js";
 import { createAuth } from "./auth.js";
 import { WorkOrderActivityService } from "./services/work-order-activity-service.js";
+import { AIAnalysisService } from "./services/ai-analysis-service.js";
+import { OpenAIProvider } from "./ai/openai-provider.js";
 
 loadDotenv({
   // fix to resolve .env in root dir
@@ -38,6 +41,7 @@ const workOrderRepository = new WorkOrderRepository(pool);
 const commentRepository = new CommentRepository(pool);
 const userRepository = new UserRepository(pool);
 const workOrderEventRepository = new WorkOrderEventRepository(pool);
+const aiAnalysisRepository = new AIAnalysisRepository(pool);
 const workOrderService = new WorkOrderService(
   workOrderRepository,
   userRepository,
@@ -52,11 +56,25 @@ const workOrderActivityService = new WorkOrderActivityService(
   commentRepository,
   workOrderEventRepository,
 );
+const aiProvider =
+  environment.AI_PROVIDER === "openai"
+    ? new OpenAIProvider({
+        apiKey: environment.AI_API_KEY!,
+        model: environment.AI_MODEL!,
+        timeoutMs: environment.AI_TIMEOUT_MS,
+      })
+    : null;
+const aiAnalysisService = new AIAnalysisService(
+  workOrderRepository,
+  aiAnalysisRepository,
+  aiProvider,
+);
 const app = createApp({
   workOrderService,
   commentService,
   userService,
   workOrderActivityService,
+  aiAnalysisService,
   authHandler: toNodeHandler(auth),
   resolveSession: (headers) => auth.api.getSession({ headers }),
   webOrigin: environment.WEB_ORIGIN,

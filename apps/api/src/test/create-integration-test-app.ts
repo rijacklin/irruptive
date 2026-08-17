@@ -7,6 +7,7 @@ import {
   UserRepository,
   WorkOrderEventRepository,
   WorkOrderRepository,
+  AIAnalysisRepository,
 } from "@irruptive/database";
 import { createApp } from "../app.js";
 import { WorkOrderService } from "../services/work-order-service.js";
@@ -15,6 +16,9 @@ import { UserService } from "../services/user-service.js";
 import { createAuth } from "../auth.js";
 import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
 import { WorkOrderActivityService } from "../services/work-order-activity-service.js";
+import { AIAnalysisService } from "../services/ai-analysis-service.js";
+import { FakeAIProvider } from "../ai/fake-ai-provider.js";
+import type { AIProvider } from "../ai/ai-provider.js";
 
 loadDotenv({
   path: new URL("../../../../.env", import.meta.url),
@@ -22,7 +26,11 @@ loadDotenv({
 });
 
 export async function createIntegrationTestApp(
-  options: { allowSignUp?: boolean; useBetterAuthSessions?: boolean } = {},
+  options: {
+    allowSignUp?: boolean;
+    useBetterAuthSessions?: boolean;
+    aiProvider?: AIProvider | null;
+  } = {},
 ) {
   const connectionString = process.env.TEST_DATABASE_URL;
 
@@ -49,6 +57,7 @@ export async function createIntegrationTestApp(
   const commentRepository = new CommentRepository(pool);
   const userRepository = new UserRepository(pool);
   const workOrderEventRepository = new WorkOrderEventRepository(pool);
+  const aiAnalysisRepository = new AIAnalysisRepository(pool);
   const workOrderService = new WorkOrderService(
     workOrderRepository,
     userRepository,
@@ -63,6 +72,13 @@ export async function createIntegrationTestApp(
     commentRepository,
     workOrderEventRepository,
   );
+  const aiAnalysisService = new AIAnalysisService(
+    workOrderRepository,
+    aiAnalysisRepository,
+    options.aiProvider === undefined
+      ? new FakeAIProvider()
+      : options.aiProvider,
+  );
   const auth = createAuth(pool, {
     baseUrl: "http://localhost:3000",
     secret: "test-secret-with-at-least-thirty-two-characters",
@@ -75,6 +91,7 @@ export async function createIntegrationTestApp(
     commentService,
     userService,
     workOrderActivityService,
+    aiAnalysisService,
     authHandler: toNodeHandler(auth),
     resolveSession: options.useBetterAuthSessions
       ? (headers) => auth.api.getSession({ headers })

@@ -15,6 +15,11 @@ import {
   WorkOrderActivityService,
   type ActivityEventStore,
 } from "../services/work-order-activity-service.js";
+import {
+  AIAnalysisService,
+  type AIAnalysisStore,
+} from "../services/ai-analysis-service.js";
+import { FakeAIProvider } from "../ai/fake-ai-provider.js";
 
 const defaultActor: AuthorizationActor = {
   id: "234173b3-13a5-43c8-baf7-bf06640cf7fd",
@@ -44,6 +49,11 @@ export function createTestApp(actor: AuthorizationActor | null = defaultActor) {
     listByWorkOrderId: vi.fn(),
   };
 
+  const analysisStore: AIAnalysisStore = {
+    create: vi.fn(),
+    findLatestByWorkOrderId: vi.fn(),
+  };
+
   const app = createApp({
     workOrderService: new WorkOrderService(store, userStore),
     commentService: new CommentService(commentStore, store),
@@ -53,6 +63,11 @@ export function createTestApp(actor: AuthorizationActor | null = defaultActor) {
       commentStore,
       eventStore,
     ),
+    aiAnalysisService: new AIAnalysisService(
+      store,
+      analysisStore,
+      new FakeAIProvider(),
+    ),
     authHandler: (_request, response) => {
       response.status(404).end();
     },
@@ -61,5 +76,12 @@ export function createTestApp(actor: AuthorizationActor | null = defaultActor) {
     webOrigin: "http://localhost:5173",
   });
 
-  return { app, store, commentStore, userStore, eventStore };
+  return {
+    app,
+    store,
+    commentStore,
+    userStore,
+    eventStore,
+    analysisStore,
+  };
 }
