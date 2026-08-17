@@ -29,13 +29,17 @@ npm install
 cp .env.example .env
 ```
 
+### Database
+
 Start PostgreSQL, wait for it to become healthy, and apply the existing database migrations:
 
 ```bash
 npm run db:setup
 ```
 
-Generate a strong Better Auth secret (at least 32 charcters) and place it in `.env`. Better Auth's [docs](https://better-auth.com/docs/installation#set-environment-variables) recommend using `openssl rand -base64 32` to manually generate this key.
+#### Auth
+
+Generate a strong Better Auth secret (at least 32 characters) and place it in `.env`. Better Auth's [docs](https://better-auth.com/docs/installation#set-environment-variables) recommend using `openssl rand -base64 32` to manually generate this key.
 
 Afterwards, generate the local admin account:
 
@@ -43,15 +47,16 @@ Afterwards, generate the local admin account:
 npm run auth:bootstrap-admin
 ```
 
+### API and React Web App
+
 Start each application in a separate terminal:
 
 ```bash
 npm run dev:web
 npm run dev:api
-npm run dev:worker
 ```
 
-The frontend is available at `http://localhost:5173`. The API listens at `http://localhost:3000`; verify it with:
+By default, the frontend is available at `http://localhost:5173`. The API listens at `http://localhost:3000`.
 
 Liveness probe for the api exists at your api's configured address. For example, using `http://localhost:3000` for the api:
 
@@ -70,8 +75,4 @@ AI_API_KEY=your-api-key
 AI_TIMEOUT_MS=15000
 ```
 
-Successful analyses are stored as immutable history with provider, model, and prompt version metadata. For cost reasons, AI features are restricted to users with the "admin" or "supervisor" role.
-
-```bash
-npm run db:setup
-```
+Successful analyses are stored as immutable history with provider, model, and prompt version metadata. For cost reasons, generating AI analyses is restricted to users with the "admin" or "supervisor" role.
