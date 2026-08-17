@@ -2,6 +2,9 @@
 
 > AI's sudden entry into the traditional work-order workflow
 
+<img width="2017" height="788" alt="Screenshot 2026-08-17 153715" src="https://github.com/user-attachments/assets/8ad6d0a7-9cd2-41d5-8b27-0572193118f1" />
+&nbsp;
+
 Irruptive is a production-oriented, AI-first, work-order management application.
 
 ## Prerequisites
