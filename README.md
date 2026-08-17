@@ -11,6 +11,7 @@ Irruptive is a production-oriented, AI-first, work-order management application.
 <details>
   <summary>Example of generated AI analysis on a work order</summary>
   &nbsp;
+  <img width="1415" height="686" alt="Screenshot 2026-08-17 161129" src="https://github.com/user-attachments/assets/69b186c1-65d2-474d-905f-eefe26c08020" />
 </details>
 
 ## Prerequisites
