@@ -4,6 +4,9 @@ import type {
   AnalyzeWorkOrderInput,
 } from "./ai-provider.js";
 
+/**
+ * Provides a way to test AI module functionality without accessing a real AI provider api.
+ */
 export class FakeAIProvider implements AIProvider {
   readonly provider = "fake";
   readonly model = "deterministic-v1";

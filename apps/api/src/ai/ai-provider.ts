@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { workOrderPriorities } from "@irruptive/shared";
 
-// fixed, versioned prompt identifier
+/** fixed, versioned prompt identifier */
 export const workOrderAnalysisPromptVersion = "work-order-analysis-v1";
 
 /**
- * Validates an AI-provider response at runtime, conforming to OpenAI's structured model outputs
- * documentation.
+ * Validates an AI-provider response at runtime, conforming to OpenAI's structured model outputs documentation.
  */
 export const aiAnalysisSchema = z.object({
   summary: z.string().trim().min(1),
