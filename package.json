@@ -21,7 +21,6 @@
     "dev": "npm run dev --workspace @irruptive/api",
     "dev:api": "npm run dev --workspace @irruptive/api",
     "dev:web": "npm run dev --workspace @irruptive/web",
-    "dev:worker": "npm run dev --workspace @irruptive/worker",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
