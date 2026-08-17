@@ -40,3 +40,45 @@ export class AssigneeNotEligibleError extends ApplicationError {
     );
   }
 }
+
+export class AIProviderUnavailableError extends ApplicationError {
+  constructor() {
+    super(
+      503,
+      "AI_PROVIDER_UNAVAILABLE",
+      "AI analysis is not configured or is currently unavailable.",
+    );
+  }
+}
+
+export class AIProviderTimeoutError extends ApplicationError {
+  constructor() {
+    super(504, "AI_PROVIDER_TIMEOUT", "The AI provider request timed out.");
+  }
+}
+
+export class AIProviderRateLimitError extends ApplicationError {
+  constructor() {
+    super(
+      429,
+      "AI_PROVIDER_RATE_LIMITED",
+      "The AI provider rate limit was exceeded.",
+    );
+  }
+}
+
+export class AIProviderOutputError extends ApplicationError {
+  constructor() {
+    super(
+      502,
+      "AI_PROVIDER_INVALID_OUTPUT",
+      "The AI provider returned invalid output.",
+    );
+  }
+}
+
+export class AIProviderUpstreamError extends ApplicationError {
+  constructor() {
+    super(502, "AI_PROVIDER_FAILURE", "The AI provider request failed.");
+  }
+}

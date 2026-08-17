@@ -8,6 +8,7 @@ import {
 import { WorkOrderUpdateForm } from "@/components/work-orders/work-order-update-form";
 import { WorkOrderComments } from "@/components/work-orders/work-order-comments";
 import { WorkOrderActivityTimeline } from "@/components/work-orders/work-order-activity-timeline";
+import { AIAnalysisPanel } from "@/components/work-orders/ai-analysis-panel";
 import { useWorkOrder } from "@/hooks/use-work-order";
 import { authClient } from "@/lib/auth-client";
 
@@ -175,6 +176,14 @@ export function WorkOrderDetailsPage() {
           </div>
         </dl>
       </section>
+
+      <AIAnalysisPanel
+        workOrderId={workOrder.id}
+        role={
+          session.data?.user.role as
+            "requester" | "technician" | "supervisor" | "admin" | undefined
+        }
+      />
 
       <WorkOrderActivityTimeline workOrderId={workOrder.id} />
 

@@ -47,7 +47,9 @@ Role permissions are enforced by backend services. Requesters see work orders
 they created, technicians see work assigned to them, and supervisors and
 administrators have organization-wide visibility. Supervisors can assign and
 reprioritize work; assigned technicians can progress work through technician
-statuses; only administrators can delete work orders.
+statuses; only administrators can delete work orders. Supervisors and
+administrators may request paid AI analysis. Anyone who can view a work order
+may view its latest stored analysis.
 
 Start each application in a separate terminal:
 
@@ -75,6 +77,39 @@ Authentication is managed by Better Auth using email/password credentials and
 database-backed cookie sessions. Passwords are hashed by Better Auth and session
 cookies are HttpOnly. `WEB_ORIGIN` controls credentialed CORS access, while
 `BETTER_AUTH_URL` is the public URL of the API authentication endpoints.
+
+### Optional AI analysis
+
+AI configuration is optional. With `AI_PROVIDER` blank, the API and all
+non-AI work-order features start normally; requesting analysis returns a
+deliberate `503 AI_PROVIDER_UNAVAILABLE` response. To enable the OpenAI
+adapter, set these server-only values in `.env`:
+
+```dotenv
+AI_PROVIDER=openai
+AI_MODEL=your-structured-output-capable-model
+AI_API_KEY=your-api-key
+AI_TIMEOUT_MS=15000
+```
+
+Never prefix the API key with `VITE_` or expose it to the browser. Successful
+analyses are stored as immutable history with provider, model, and prompt
+version metadata. They remain recommendations and never update canonical work
+order fields.
+
+The normal automated suite uses deterministic fakes and never calls OpenAI. An
+opt-in manual check requires a signed-in supervisor or administrator session.
+With the API and web app running and OpenAI configured, sign in through the UI,
+open an accessible work order, and choose **Generate analysis**. Alternatively,
+copy the session cookie from your browser and run:
+
+```bash
+curl -X POST \
+  -H 'Cookie: better-auth.session_token=YOUR_SESSION_TOKEN' \
+  http://localhost:3000/api/work-orders/WORK_ORDER_ID/ai-analysis
+```
+
+Do not add this live-provider check to `npm test` or CI.
 
 ### PostgreSQL port conflicts
 
@@ -150,12 +185,12 @@ The API currently supports:
 - `GET /api/work-orders/:id`
 - `PATCH /api/work-orders/:id`
 - `DELETE /api/work-orders/:id`
+- `POST /api/work-orders/:id/ai-analysis`
+- `GET /api/work-orders/:id/ai-analysis` (`data: null` before first analysis)
 
 ## Authorization policy
 
-The API contains a server-side work-order authorization policy covering
-ownership, assignment, role-based updates, commenting, and deletion. The policy
-is intentionally not enforced by routes yet: authentication is a Phase 4 task,
-and request body fields or ad hoc headers are not trusted identities. Phase 4
-middleware will supply a verified actor before application services invoke this
-policy.
+The API enforces server-side work-order authorization covering ownership,
+assignment, role-based updates, commenting, deletion, and AI analysis. Better
+Auth middleware supplies the verified actor; request fields and ad hoc identity
+headers are never trusted as authentication.

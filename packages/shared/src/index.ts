@@ -141,3 +141,24 @@ export type WorkOrderActivityItemResponse =
 export interface ListWorkOrderActivityResponse {
   data: WorkOrderActivityItemResponse[];
 }
+
+export interface AIAnalysisResponse {
+  id: string;
+  workOrderId: string;
+  provider: string;
+  model: string;
+  promptVersion: string;
+  summary: string;
+  suggestedPriority: WorkOrderPriority | null;
+  suggestedCategory: string | null;
+  suggestedActions: string[];
+  createdAt: string;
+}
+
+export interface GetAIAnalysisResponse {
+  data: AIAnalysisResponse | null;
+}
+
+export interface CreateAIAnalysisResponse {
+  data: AIAnalysisResponse;
+}
