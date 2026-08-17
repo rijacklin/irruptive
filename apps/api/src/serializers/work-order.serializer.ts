@@ -1,6 +1,12 @@
 import type { WorkOrder } from "@irruptive/database";
 import type { WorkOrderResponse } from "@irruptive/shared";
 
+/**
+ * Serializes a stored work order record into its API response representation.
+ *
+ * @param workOrder - Database model to serialize.
+ * @returns The API response DTO.
+ */
 export function serializeWorkOrder(workOrder: WorkOrder): WorkOrderResponse {
   return {
     id: workOrder.id,

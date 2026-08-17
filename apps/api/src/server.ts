@@ -1,4 +1,3 @@
-import { config as loadDotenv } from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import {
   checkDatabaseConnection,
@@ -19,14 +18,21 @@ import { WorkOrderActivityService } from "./services/work-order-activity-service
 import { AIAnalysisService } from "./services/ai-analysis-service.js";
 import { OpenAIProvider } from "./ai/openai-provider.js";
 
-loadDotenv({
-  // fix to resolve .env in root dir
-  path: new URL("../../../.env", import.meta.url),
-  quiet: true,
-});
+try {
+  /** grab the .env file from project root (node makes this task ugly, unfortunately)  */
+  const repoRootPath = new URL("../../../", import.meta.url);
+  process.loadEnvFile(new URL(".env", repoRootPath));
+} catch (error) {
+  if (
+    !(error instanceof Error) ||
+    !("code" in error) ||
+    error.code !== "ENOENT"
+  ) {
+    throw error;
+  }
+}
 
 const environment = loadEnvironment();
-
 const pool = createDatabasePool({ connectionString: environment.DATABASE_URL });
 await checkDatabaseConnection(pool);
 console.log("Database connection established");
@@ -36,7 +42,6 @@ const auth = createAuth(pool, {
   secret: environment.BETTER_AUTH_SECRET,
   trustedOrigins: [environment.WEB_ORIGIN],
 });
-
 const workOrderRepository = new WorkOrderRepository(pool);
 const commentRepository = new CommentRepository(pool);
 const userRepository = new UserRepository(pool);
@@ -94,6 +99,6 @@ async function shutdown(signal: string): Promise<void> {
   });
 }
 
-// server can listen to OS signals to properly shutdowwn
+/** server can listen to OS signals to properly shutdowwn */
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));

@@ -30,6 +30,12 @@ export interface AppDependencies {
   aiAnalysisService: AIAnalysisService;
 }
 
+/**
+ * Constructs the app instance with provided dependencies.
+ *
+ * @param dependencies - Collection of dependencies passed to application instance.
+ * @returns An Express app instance.
+ */
 export function createApp(dependencies: AppDependencies) {
   const app = express();
 

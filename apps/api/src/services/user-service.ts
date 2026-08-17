@@ -10,8 +10,21 @@ export interface UserListStore {
 }
 
 export class UserService {
-  constructor(private readonly users: UserListStore) {}
+  /**
+   * Creates a user service.
+   *
+   * @param users - Store used to list users.
+   */
+  constructor(private readonly users: UserListStore) { }
 
+  /**
+   * Lists users matching the requested filters.
+   *
+   * @param actor - The authenticated user requesting the user list.
+   * @param input - Filtering criteria for the user list.
+   * @returns The users matching the requested filters.
+   * @throws {@link AuthorizationDeniedError} If the actor may not list users.
+   */
   async list(
     actor: AuthorizationActor,
     input: ListUsersInput,

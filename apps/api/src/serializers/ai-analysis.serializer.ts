@@ -2,7 +2,7 @@ import type { AIAnalysis } from "@irruptive/database";
 import type { AIAnalysisResponse } from "@irruptive/shared";
 
 /**
- * Serializes a stored AI analysis into its API response representation.
+ * Serializes a stored AI analysis record into its API response representation.
  *
  * @param analysis - Database model to serialize.
  * @returns The API response DTO.

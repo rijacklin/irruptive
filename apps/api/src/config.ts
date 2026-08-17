@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+/**
+ * Treat empty-string .env values as unset for runtime validation.
+ */
 const optionalEnvironmentValue = <T extends z.ZodType>(schema: T) =>
   z.preprocess(
     (value) => (value === "" ? undefined : value),
     schema.optional(),
   );
 
+/**
+ * Define the server environment schema with defaults, coercion, and runtime validation.
+ */
 const environmentSchema = z
   .object({
     API_HOST: z.string().default("0.0.0.0"),
@@ -34,10 +40,11 @@ const environmentSchema = z
       }
     }
   });
-
 export type Environment = z.infer<typeof environmentSchema>;
 
-// todo: more custom error types; integrate modern Zed4 custom errors
+/**
+ * Custom runtime error type thrown by loadEnvironment when environment validation fails.
+ */
 export class EnvironmentConfigurationError extends Error {
   constructor(public readonly issues: z.core.$ZodIssue[]) {
     super("Invalid environment configuration");
@@ -45,6 +52,9 @@ export class EnvironmentConfigurationError extends Error {
   }
 }
 
+/**
+ * Parse and validate the process environment.
+ */
 export function loadEnvironment(
   source: NodeJS.ProcessEnv = process.env,
 ): Environment {

@@ -42,8 +42,8 @@ async function getError(response: Response): Promise<AIAnalysisApiError> {
  *
  * @param workOrderId - ID of associated work order.
  * @param signal - Optional signal forwarded to fetch for query cancellation.
- * @returns A 'GetAIAnalysisResponse' contract.
- * @throws 'AIAnalysisApiError' if current request fails.
+ * @returns A {@link GetAIAnalysisResponse} contract.
+ * @throws {@link AIAnalysisApiError} if current request fails.
  */
 export async function getAIAnalysis(
   workOrderId: string,
@@ -72,8 +72,8 @@ export async function getAIAnalysis(
  * TODO: Review
  *
  * @param workOrderId - ID of associated work order.
- * @returns A 'CreateAIAnalysisResponse' contract.
- * @throws 'AIAnalysisApiError' if current request fails.
+ * @returns A {@link CreateAIAnalysisResponse} contract.
+ * @throws {@link AIAnalysisApiError} if current request fails.
  */
 export async function createAIAnalysis(
   workOrderId: string,

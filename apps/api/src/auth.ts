@@ -2,6 +2,9 @@ import type { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 
+/**
+ * Defines the structure of a Better Auth configuration object.
+ */
 export interface AuthConfiguration {
   baseUrl: string;
   secret: string;
@@ -10,6 +13,12 @@ export interface AuthConfiguration {
   autoSignInOnSignUp?: boolean;
 }
 
+/**
+ * Generates BetterAuth wrapper for application.
+ *
+ * @param database - A pool of PG database connections.
+ * @param config - Better Auth configuration object.
+ */
 export function createAuth(database: Pool, config: AuthConfiguration) {
   return betterAuth({
     appName: "Irruptive",
@@ -85,5 +94,4 @@ export function createAuth(database: Pool, config: AuthConfiguration) {
     },
   });
 }
-
 export type Auth = ReturnType<typeof createAuth>;

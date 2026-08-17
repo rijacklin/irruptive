@@ -22,11 +22,24 @@ export interface WorkOrderLookup {
 }
 
 export class CommentService {
+  /**
+   * Creates a comment service.
+   *
+   * @param comments - Store used to persist and retrieve comments.
+   * @param workOrders - Lookup used to load work orders for authorization.
+   */
   constructor(
     private readonly comments: CommentStore,
     private readonly workOrders: WorkOrderLookup,
-  ) {}
+  ) { }
 
+  /**
+   * Loads a work order by ID.
+   *
+   * @param workOrderId - ID of the work order to load.
+   * @returns The matching work order.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   */
   private async findWorkOrder(workOrderId: string): Promise<WorkOrder> {
     const workOrder = await this.workOrders.findById(workOrderId);
     if (!workOrder) {
@@ -36,6 +49,15 @@ export class CommentService {
     return workOrder;
   }
 
+  /**
+   * Creates a comment on a work order that the actor may comment on.
+   *
+   * @param actor - The authenticated user creating the comment.
+   * @param input - The work-order ID and comment body.
+   * @returns The persisted comment.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   * @throws {@link AuthorizationDeniedError} If the actor may not comment on the work order.
+   */
   async create(
     actor: AuthorizationActor,
     input: Omit<CreateCommentInput, "userId">,
@@ -48,6 +70,15 @@ export class CommentService {
     return this.comments.create({ ...input, userId: actor.id });
   }
 
+  /**
+   * Lists comments on a work order that the actor may view.
+   *
+   * @param actor - The authenticated user viewing the comments.
+   * @param workOrderId - ID of associated work order.
+   * @returns The work order's comments.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   * @throws {@link AuthorizationDeniedError} If the actor may not view the work order.
+   */
   async list(
     actor: AuthorizationActor,
     workOrderId: string,
