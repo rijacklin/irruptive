@@ -10,7 +10,7 @@ export interface UserListStore {
 }
 
 export class UserService {
-  constructor(private readonly users: UserListStore) { }
+  constructor(private readonly users: UserListStore) {}
 
   /**
    * Lists users matching the requested filters.

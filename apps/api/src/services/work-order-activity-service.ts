@@ -29,7 +29,7 @@ export class WorkOrderActivityService {
     private readonly workOrders: ActivityWorkOrderStore,
     private readonly comments: ActivityCommentStore,
     private readonly events: ActivityEventStore,
-  ) { }
+  ) {}
 
   /**
    * Lists activity items associated with a work order.

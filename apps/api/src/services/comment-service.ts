@@ -25,7 +25,7 @@ export class CommentService {
   constructor(
     private readonly comments: CommentStore,
     private readonly workOrders: WorkOrderLookup,
-  ) { }
+  ) {}
 
   /**
    * Loads a work order by ID.

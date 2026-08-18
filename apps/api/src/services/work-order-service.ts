@@ -34,7 +34,7 @@ export class WorkOrderService {
   constructor(
     private readonly workOrders: WorkOrderStore,
     private readonly assignees: AssigneeStore,
-  ) { }
+  ) {}
 
   /**
    * Creates a work order for an authorized user.
@@ -56,7 +56,7 @@ export class WorkOrderService {
   }
 
   /**
-   * Finds a work order by ID, requiring it to exist. 
+   * Finds a work order by ID, requiring it to exist.
    *
    * @param id - ID of associated work order.
    * @returns The requested work order.
