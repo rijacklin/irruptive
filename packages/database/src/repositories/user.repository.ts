@@ -34,6 +34,12 @@ function mapUserRow(row: UserRow): User {
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
+  /**
+   * Finds an assignable technician by ID.
+   *
+   * @param id - The ID of the user to find.
+   * @returns The user when found, or null if the user doesn't exist or is not assigned the technican role.
+   */
   async findAssignableById(id: string): Promise<User | null> {
     const result = await this.pool.query<UserRow>(
       `
@@ -49,6 +55,12 @@ export class UserRepository {
     return row ? mapUserRow(row) : null;
   }
 
+  /**
+   * Lists users matching provided criteria.
+   *
+   * @param input - Filter/order criteria for the user list.
+   * @returns The lists of users matching provided criteria.
+   */
   async list(input: ListUsersInput): Promise<User[]> {
     const result = await this.pool.query<UserRow>(
       `

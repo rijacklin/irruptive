@@ -4,6 +4,12 @@ import type { WorkOrderActivityService } from "../services/work-order-activity-s
 import { serializeWorkOrderActivityItem } from "../serializers/work-order-activity.serializer.js";
 import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
+/**
+ * Creates handlers for listing work-order activity.
+ *
+ * @param service - Application service used to list work-order activity.
+ * @returns Controller handlers for work-order activity endpoints.
+ */
 export function createWorkOrderActivityController(
   service: WorkOrderActivityService,
 ) {

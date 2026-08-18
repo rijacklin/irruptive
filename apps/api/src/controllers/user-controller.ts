@@ -4,6 +4,12 @@ import type { ListUsersRequest } from "../schemas/user.schemas.js";
 import { serializeUser } from "../serializers/user.serializer.js";
 import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
+/**
+ * Creates handlers for listing users.
+ *
+ * @param service - Application service used to list users.
+ * @returns Controller handlers for user endpoints.
+ */
 export function createUserController(service: UserService) {
   return {
     list: async (

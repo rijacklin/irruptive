@@ -22,12 +22,6 @@ export interface WorkOrderLookup {
 }
 
 export class CommentService {
-  /**
-   * Creates a comment service.
-   *
-   * @param comments - Store used to persist and retrieve comments.
-   * @param workOrders - Lookup used to load work orders for authorization.
-   */
   constructor(
     private readonly comments: CommentStore,
     private readonly workOrders: WorkOrderLookup,
@@ -56,7 +50,7 @@ export class CommentService {
    * @param input - The work-order ID and comment body.
    * @returns The persisted comment.
    * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
-   * @throws {@link AuthorizationDeniedError} If the actor may not comment on the work order.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to comment on the work order.
    */
   async create(
     actor: AuthorizationActor,
@@ -77,7 +71,7 @@ export class CommentService {
    * @param workOrderId - ID of associated work order.
    * @returns The work order's comments.
    * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
-   * @throws {@link AuthorizationDeniedError} If the actor may not view the work order.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to view the work order.
    */
   async list(
     actor: AuthorizationActor,

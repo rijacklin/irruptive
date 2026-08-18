@@ -43,17 +43,17 @@ export function canRequestAIAnalysis(actor: AuthorizationActor): boolean {
 
 export class AIAnalysisService {
   /**
-    * Creates an AI analysis service.
-    *
-    * @param workOrders - Store used to load work orders for access checks and analysis.
-    * @param analyses - Store used to persist and retrieve AI analyses.
-    * @param provider - AI provider used to generate analyses, or `null` when AI is not configured.
-    */
+   * Creates an AI analysis service.
+   *
+   * @param workOrders - Store used to load work orders for access checks and analysis.
+   * @param analyses - Store used to persist and retrieve AI analyses.
+   * @param provider - AI provider used to generate analyses, or `null` when AI is not configured.
+   */
   constructor(
     private readonly workOrders: AIAnalysisWorkOrderStore,
     private readonly analyses: AIAnalysisStore,
     private readonly provider: AIProvider | null,
-  ) { }
+  ) {}
 
   /**
    * Retrieves the latest AI analysis for a given work order.

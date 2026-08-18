@@ -34,8 +34,16 @@ export class WorkOrderService {
   constructor(
     private readonly workOrders: WorkOrderStore,
     private readonly assignees: AssigneeStore,
-  ) {}
+  ) { }
 
+  /**
+   * Creates a work order for an authorized user.
+   *
+   * @param actor - The authenticated user creating the work order.
+   * @param input - The work-order data, excluding the creator ID derived from the authenticated user.
+   * @returns The persisted work order.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to create a work order.
+   */
   async create(
     actor: AuthorizationActor,
     input: Omit<CreateWorkOrderInput, "createdBy">,
@@ -47,6 +55,13 @@ export class WorkOrderService {
     return this.workOrders.create({ ...input, createdBy: actor.id });
   }
 
+  /**
+   * Finds a work order by ID, requiring it to exist. 
+   *
+   * @param id - ID of associated work order.
+   * @returns The requested work order.
+   * @throws {@link WorkOrderNotFoundError} If the work order cannot be found.
+   */
   private async findRequired(id: string): Promise<WorkOrder> {
     const workOrder = await this.workOrders.findById(id);
 
@@ -57,6 +72,15 @@ export class WorkOrderService {
     return workOrder;
   }
 
+  /**
+   * Retrieves a work order that the authenticated user is authorized to view.
+   *
+   * @param actor - The authenticated user requesting the work order.
+   * @param id - ID of associated work order.
+   * @returns The requested work order.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to view the work order.
+   */
   async getById(actor: AuthorizationActor, id: string): Promise<WorkOrder> {
     const workOrder = await this.findRequired(id);
 
@@ -67,6 +91,13 @@ export class WorkOrderService {
     return workOrder;
   }
 
+  /**
+   * Lists work orders the user is authorized to view.
+   *
+   * @param actor - The authenticated user requesting the work orders.
+   * @param input - The filtering, sorting, and pagination options.
+   * @returns The work orders visible to the user.
+   */
   async list(
     actor: AuthorizationActor,
     input: ListWorkOrdersInput,
@@ -74,6 +105,17 @@ export class WorkOrderService {
     return this.workOrders.list({ ...input, ...getWorkOrderListScope(actor) });
   }
 
+  /**
+   * Updates a work order the user is authorized to modify.
+   *
+   * @param actor - The authenticated user updating the work order.
+   * @param id - The ID of the work order to update.
+   * @param input - The work-order fields to update.
+   * @returns The updated work order.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to update the work order.
+   * @throws {@link AssigneeNotEligibleError} If the selected assignee is not an eligible technician.
+   */
   async update(
     actor: AuthorizationActor,
     id: string,
@@ -104,6 +146,15 @@ export class WorkOrderService {
     return workOrder;
   }
 
+  /**
+   * Deletes a work order the user is authorized to delete.
+   *
+   * @param actor - The authenticated user deleting the work order.
+   * @param id - The ID of the work order to delete.
+   * @returns A promise that resolves when the work order has been deleted.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to delete the work order.
+   */
   async delete(actor: AuthorizationActor, id: string): Promise<void> {
     const existing = await this.findRequired(id);
 

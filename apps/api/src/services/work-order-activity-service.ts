@@ -29,8 +29,17 @@ export class WorkOrderActivityService {
     private readonly workOrders: ActivityWorkOrderStore,
     private readonly comments: ActivityCommentStore,
     private readonly events: ActivityEventStore,
-  ) {}
+  ) { }
 
+  /**
+   * Lists activity items associated with a work order.
+   *
+   * @param actor - The authenticated user requesting the activity.
+   * @param workOrderId - The ID of the work order whose activity to retrieve.
+   * @returns The activity items associated with the work order.
+   * @throws {@link WorkOrderNotFoundError} If the work order does not exist.
+   * @throws {@link AuthorizationDeniedError} If the user is not authorized to view the work order.
+   */
   async list(
     actor: AuthorizationActor,
     workOrderId: string,
