@@ -6,6 +6,12 @@ import type { WorkOrderIdParams } from "../schemas/work-order.schemas.js";
 import { serializeComment } from "../serializers/comment.serializer.js";
 import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
+/**
+ * Creates handlers for creating/listing comments.
+ *
+ * @param service - Application service used to create/list comments.
+ * @returns Controller handlers for comment endpoints.
+ */
 export function createCommentController(service: CommentService) {
   return {
     create: async (

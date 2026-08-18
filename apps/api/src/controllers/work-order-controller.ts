@@ -13,6 +13,12 @@ import type {
 } from "../schemas/work-order.schemas.js";
 import { getAuthenticatedActor } from "../middleware/require-authentication.js";
 
+/**
+ * Creates handlers for managing work orders.
+ *
+ * @param service - Application service used to create/retrieve/update/delete work orders.
+ * @returns Controller handlers for work-order endpoints.
+ */
 export function createWorkOrderController(service: WorkOrderService) {
   return {
     create: async (

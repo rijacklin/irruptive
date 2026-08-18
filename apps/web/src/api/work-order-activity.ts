@@ -12,6 +12,7 @@ export async function listWorkOrderActivity(
   );
 
   const response = await fetch(url, {
+    credentials: "include",
     headers: { Accept: "application/json" },
     ...(signal !== undefined ? { signal } : {}),
   });

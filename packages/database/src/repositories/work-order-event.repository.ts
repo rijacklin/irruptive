@@ -45,6 +45,13 @@ function mapWorkOrderEventRow(row: WorkOrderEventRow): WorkOrderEvent {
 export class WorkOrderEventRepository {
   constructor(private readonly database: Queryable) {}
 
+  /**
+   * Creates a work order event in the database.
+   *
+   * @param input - The data required to create the work-order event.
+   * @returns The persisted work order event.
+   * @throws Error if the database does not return the persisted event.
+   */
   async create(input: CreateWorkOrderEventInput): Promise<WorkOrderEvent> {
     const result = await this.database.query<WorkOrderEventRow>(
       `
@@ -68,6 +75,12 @@ export class WorkOrderEventRepository {
     return mapWorkOrderEventRow(row);
   }
 
+  /**
+   * Lists events associated with a work order.
+   *
+   * @param workOrderId - The ID of the work order whose events to retrieve.
+   * @returns The associated events, ordered by creation time and and ID.
+   */
   async listByWorkOrderId(workOrderId: string): Promise<WorkOrderEvent[]> {
     const result = await this.database.query<WorkOrderEventRow>(
       `

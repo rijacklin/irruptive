@@ -85,6 +85,13 @@ function mapWorkOrderRow(row: WorkOrderRow): WorkOrder {
 export class WorkOrderRepository {
   constructor(private readonly pool: Pool) {}
 
+  /**
+   * Creates a work order and associtaed event in the database.
+   *
+   * @param input - The data required to create a work order.
+   * @returns The persisted work order.
+   * @throws Error if the database does not reutrn the persisted work order.
+   */
   async create(input: CreateWorkOrderInput): Promise<WorkOrder> {
     return this.withTransaction(async (client) => {
       const result = await client.query<WorkOrderRow>(
@@ -137,6 +144,12 @@ export class WorkOrderRepository {
     });
   }
 
+  /**
+   * Returns the requested work order from the database.
+   *
+   * @param id - Work order identifier.
+   * @returns The requested work order, or null if that work order doesn't exist.
+   */
   async findById(id: string): Promise<WorkOrder | null> {
     const result = await this.pool.query<WorkOrderRow>(
       `
@@ -151,6 +164,12 @@ export class WorkOrderRepository {
     return row ? mapWorkOrderRow(row) : null;
   }
 
+  /**
+   * Returns a paginated list of work orders.
+   *
+   * @param input - Structured input for listing work orders.
+   * @returns The list of work orders.
+   */
   async list(input: ListWorkOrdersInput): Promise<WorkOrder[]> {
     const result = await this.pool.query<WorkOrderRow>(
       `
@@ -173,6 +192,15 @@ export class WorkOrderRepository {
     return result.rows.map(mapWorkOrderRow);
   }
 
+  /**
+   * Updates fields on an existing work order and records change events for altered fields.
+   * Field changes and associated events all occur in a single database transaction.
+   *
+   * @param id - Work order identifier.
+   * @param input - Structured input for updating a work order.
+   * @returns The updated work order, or null if work order does not exist.
+   * @throws Error if no updated fields are provided.
+   */
   async update(
     id: string,
     input: UpdateWorkOrderInput,
@@ -287,6 +315,12 @@ export class WorkOrderRepository {
     });
   }
 
+  /**
+   * Deletes a work order from the database.
+   *
+   * @param id - Work order identifier.
+   * @returns True if a work order was deleted, false if none existed with that id.
+   */
   async delete(id: string): Promise<boolean> {
     const result = await this.pool.query(
       `
@@ -299,6 +333,13 @@ export class WorkOrderRepository {
     return result.rowCount === 1;
   }
 
+  /**
+   * Runs the given operation within a single database transaction.
+   *
+   * @param operation - The asynchronous operation to execute using the transaction client.
+   * @returns The value returned by the operation after the transaction commits successfully.
+   * @throws The original error if the operation or commit fails, after attempting to roll back the transaction.
+   */
   private async withTransaction<T>(
     operation: (client: PoolClient) => Promise<T>,
   ): Promise<T> {

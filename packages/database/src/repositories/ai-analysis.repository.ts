@@ -69,6 +69,13 @@ function mapRow(row: AIAnalysisRow): AIAnalysis {
 export class AIAnalysisRepository {
   constructor(private readonly pool: Pool) {}
 
+  /**
+   * Creates an AI analysis record in the database.
+   *
+   * @param input - The data required to create an AI analysis.
+   * @returns The persisted AI analysis.
+   * @throws Error if the database does not return the persisted AI analysis.
+   */
   async create(input: CreateAIAnalysisInput): Promise<AIAnalysis> {
     const result = await this.pool.query<AIAnalysisRow>(
       `
@@ -105,6 +112,12 @@ export class AIAnalysisRepository {
     return mapRow(row);
   }
 
+  /**
+   * Finds the latest AI analysis associated with a given work order.
+   *
+   * @param workOrderId - The ID of the work order to retrieve latest AI analysis from.
+   * @returns The latest AI analysis associated with work order, or null if no AI analysis exists on work order.
+   */
   async findLatestByWorkOrderId(
     workOrderId: string,
   ): Promise<AIAnalysis | null> {

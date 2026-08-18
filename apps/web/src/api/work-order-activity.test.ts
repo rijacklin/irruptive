@@ -23,7 +23,10 @@ describe("listWorkOrderActivity", () => {
       new URL(
         "http://localhost:3000/api/work-orders/work%2Forder%20id/activity",
       ),
-      { headers: { Accept: "application/json" } },
+      {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      },
     );
   });
 });

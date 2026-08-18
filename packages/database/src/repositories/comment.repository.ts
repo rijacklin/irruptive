@@ -43,6 +43,13 @@ function mapCommentRow(row: CommentRow): Comment {
 export class CommentRepository {
   constructor(private readonly pool: Pool) {}
 
+  /**
+   * Creates a comment.
+   *
+   * @param input - The data required to create a comment.
+   * @returns The persisted comment.
+   * @throws Error if the database does not return the persisted comment.
+   */
   async create(input: CreateCommentInput): Promise<Comment> {
     const result = await this.pool.query<CommentRow>(
       `
@@ -66,6 +73,12 @@ export class CommentRepository {
     return mapCommentRow(row);
   }
 
+  /**
+   * Lists comments associated with a given work order.
+   *
+   * @param workOrderId - The ID of the work order whose comments to retrieve.
+   * @returns The list of comments on the work order.
+   */
   async listByWorkOrderId(workOrderId: string): Promise<Comment[]> {
     const result = await this.pool.query<CommentRow>(
       `
