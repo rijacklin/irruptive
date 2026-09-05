@@ -25,11 +25,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:api:integration": "npm run db:test:migrate && vitest run --project node apps/api/src/routes/work-order-routes.integration.test.ts",
+    "test": "vitest run --project node --project web",
+    "test:api:integration": "npm run db:test:migrate && vitest run --project integration apps/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "verify": "npm run format && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
-    "verify:integration": "npm run db:test:migrate && npm run verify"
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "verify:integration": "npm run db:test:migrate && vitest run --project integration"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
