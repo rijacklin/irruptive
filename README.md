@@ -75,3 +75,35 @@ Successful analyses are stored as immutable history with provider, model, and pr
 ```bash
 npm run db:setup
 ```
+
+## Verification
+
+Run the main checks without changing source files:
+
+```bash
+npm run verify
+```
+
+This checks formatting, lint, and types, runs the non-database Node and frontend
+tests, and builds the workspaces. Build outputs are generated in ignored
+directories. Use `npm run format` explicitly to apply formatting fixes.
+`npm test` runs only the non-database tests; it does not require PostgreSQL.
+
+For database or API changes, also run the PostgreSQL integration checks:
+
+```bash
+docker compose up -d --wait postgres
+npm run verify:integration
+```
+
+Set `TEST_DATABASE_URL` in `.env` to a dedicated test database, separate from
+`DATABASE_URL`. Integration tests modify test data. `verify:integration` applies
+test database migrations and runs the `integration` Vitest project: API
+`*.integration.test.ts` suites and database migration/repository tests. It does
+not repeat formatting, lint, typechecking, non-database tests, or builds.
+Run both verification commands when changing test selection or verification
+scripts, and for a complete local check.
+
+For a focused API integration run, use `npm run test:api:integration`; this
+migrates the test database and runs all API integration suites. Normal automated
+tests use fake or mocked AI providers and never call a paid AI API.

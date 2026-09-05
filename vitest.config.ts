@@ -23,6 +23,19 @@ export default defineConfig({
             "apps/worker/**/*.test.ts",
             "packages/**/*.test.ts",
           ],
+          exclude: ["**/*.integration.test.ts", "packages/database/test/**"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "integration",
+          environment: "node",
+          include: [
+            "apps/**/*.integration.test.ts",
+            "packages/**/*.integration.test.ts",
+            "packages/database/test/**/*.test.ts",
+          ],
         },
       },
       {
