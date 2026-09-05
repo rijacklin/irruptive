@@ -1,9 +1,10 @@
+import { ApiError } from "./client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   CreateCommentResponse,
   ListCommentsResponse,
 } from "@irruptive/shared";
-import { CommentApiError, createComment, listComments } from "./comment";
+import { createComment, listComments } from "./comment";
 
 const workOrderId = "6efd02fb-37ae-4685-b0c8-d7408afbf3b3";
 const userId = "234173b3-13a5-43c8-baf7-bf06640cf7fd";
@@ -83,8 +84,8 @@ describe("comment API", () => {
     await expect(
       createComment(workOrderId, { body: comment.body }),
     ).rejects.toEqual(
-      expect.objectContaining<Partial<CommentApiError>>({
-        name: "CommentApiError",
+      expect.objectContaining<Partial<ApiError>>({
+        name: "ApiError",
         message: "Unable to add comment (422).",
         status: 422,
       }),

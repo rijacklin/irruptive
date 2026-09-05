@@ -1,25 +1,13 @@
 import type { ListWorkOrderActivityResponse } from "@irruptive/shared";
+import { requestJson } from "./client";
 
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-
-export async function listWorkOrderActivity(
+export function listWorkOrderActivity(
   workOrderId: string,
   signal?: AbortSignal,
 ): Promise<ListWorkOrderActivityResponse> {
-  const url = new URL(
+  return requestJson(
     `/api/work-orders/${encodeURIComponent(workOrderId)}/activity`,
-    apiBaseUrl,
+    "Unable to load activity",
+    { ...(signal !== undefined ? { signal } : {}) },
   );
-
-  const response = await fetch(url, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-    ...(signal !== undefined ? { signal } : {}),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Unable to load activity (${response.status}).`);
-  }
-
-  return (await response.json()) as ListWorkOrderActivityResponse;
 }

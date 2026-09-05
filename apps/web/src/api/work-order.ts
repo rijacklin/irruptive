@@ -6,119 +6,56 @@ import type {
   UpdateWorkOrderRequest,
   UpdateWorkOrderResponse,
 } from "@irruptive/shared";
+import { requestJson } from "./client";
 
 export interface ListWorkOrdersParams {
   limit: number;
   offset: number;
 }
-
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-
-export async function listWorkOrders(
+export function listWorkOrders(
   params: ListWorkOrdersParams,
   signal?: AbortSignal,
 ): Promise<ListWorkOrdersResponse> {
-  const url = new URL("/api/work-orders", apiBaseUrl);
-
-  url.searchParams.set("limit", String(params.limit));
-  url.searchParams.set("offset", String(params.offset));
-
-  const response = await fetch(url, {
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-    },
-    ...(signal !== undefined ? { signal } : {}),
+  const query = new URLSearchParams({
+    limit: String(params.limit),
+    offset: String(params.offset),
   });
-
-  if (!response.ok) {
-    throw new Error(`Unable to load work orders (${response.status}).`);
-  }
-
-  return (await response.json()) as ListWorkOrdersResponse;
+  return requestJson(
+    `/api/work-orders?${query}`,
+    "Unable to load work orders",
+    { ...(signal !== undefined ? { signal } : {}) },
+  );
 }
-
-export class WorkOrderApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = "WorkOrderApiError";
-  }
-}
-
-export async function getWorkOrder(
+export function getWorkOrder(
   id: string,
   signal?: AbortSignal,
 ): Promise<GetWorkOrderResponse> {
-  const url = new URL(`/api/work-orders/${encodeURIComponent(id)}`, apiBaseUrl);
-
-  const response = await fetch(url, {
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-    },
-    ...(signal !== undefined ? { signal } : {}),
-  });
-
-  if (!response.ok) {
-    throw new WorkOrderApiError(
-      `Unable to load work order (${response.status}).`,
-      response.status,
-    );
-  }
-
-  return (await response.json()) as GetWorkOrderResponse;
+  return requestJson(
+    `/api/work-orders/${encodeURIComponent(id)}`,
+    "Unable to load work order",
+    { ...(signal !== undefined ? { signal } : {}) },
+  );
 }
-
-export async function createWorkOrder(
+export function createWorkOrder(
   input: CreateWorkOrderRequest,
 ): Promise<CreateWorkOrderResponse> {
-  const url = new URL("/api/work-orders", apiBaseUrl);
-
-  const response = await fetch(url, {
+  return requestJson("/api/work-orders", "Unable to create work order", {
     method: "POST",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-
-  if (!response.ok) {
-    throw new WorkOrderApiError(
-      `Unable to create work order (${response.status}).`,
-      response.status,
-    );
-  }
-
-  return (await response.json()) as CreateWorkOrderResponse;
 }
-
-export async function updateWorkOrder(
+export function updateWorkOrder(
   id: string,
   input: UpdateWorkOrderRequest,
 ): Promise<UpdateWorkOrderResponse> {
-  const url = new URL(`/api/work-orders/${encodeURIComponent(id)}`, apiBaseUrl);
-
-  const response = await fetch(url, {
-    method: "PATCH",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
+  return requestJson(
+    `/api/work-orders/${encodeURIComponent(id)}`,
+    "Unable to update work order",
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
     },
-    body: JSON.stringify(input),
-  });
-
-  if (!response.ok) {
-    throw new WorkOrderApiError(
-      `Unable to update work order (${response.status}).`,
-      response.status,
-    );
-  }
-
-  return (await response.json()) as UpdateWorkOrderResponse;
+  );
 }
