@@ -1,5 +1,4 @@
-export const applicationName = "Irruptive";
-
+/** defines the liveness probe response */
 export interface HealthResponse {
   status: "ok";
 }
@@ -10,7 +9,6 @@ export const userRoles = [
   "supervisor",
   "admin",
 ] as const;
-
 export type UserRole = (typeof userRoles)[number];
 
 export interface UserResponse {
@@ -33,7 +31,6 @@ export const workOrderStatuses = [
   "resolved",
   "closed",
 ] as const;
-
 export type WorkOrderStatus = (typeof workOrderStatuses)[number];
 
 export const workOrderPriorities = [
@@ -42,7 +39,6 @@ export const workOrderPriorities = [
   "high",
   "critical",
 ] as const;
-
 export type WorkOrderPriority = (typeof workOrderPriorities)[number];
 
 export interface WorkOrderResponse {
