@@ -1,9 +1,6 @@
+import { retryQuery } from "./query-retry";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  AIAnalysisApiError,
-  createAIAnalysis,
-  getAIAnalysis,
-} from "@/api/ai-analysis";
+import { createAIAnalysis, getAIAnalysis } from "@/api/ai-analysis";
 
 /**
  * Ensures a unique key is used for caching records that associate AI analyses with work orders.
@@ -27,16 +24,7 @@ export function useAIAnalysis(workOrderId: string) {
   return useQuery({
     queryKey: aiAnalysisQueryKey(workOrderId),
     queryFn: ({ signal }) => getAIAnalysis(workOrderId, signal),
-    retry: (failureCount, error) => {
-      if (
-        error instanceof AIAnalysisApiError &&
-        error.status >= 400 &&
-        error.status < 500
-      ) {
-        return false;
-      }
-      return failureCount < 2;
-    },
+    retry: retryQuery,
   });
 }
 

@@ -16,11 +16,8 @@ import type {
   UserResponse,
 } from "@irruptive/shared";
 
-import {
-  getWorkOrder,
-  updateWorkOrder,
-  WorkOrderApiError,
-} from "@/api/work-order";
+import { getWorkOrder, updateWorkOrder } from "@/api/work-order";
+import { ApiError } from "@/api/client";
 import { createComment, listComments } from "@/api/comment";
 import { listUsers } from "@/api/user";
 import { authClient } from "@/lib/auth-client";
@@ -237,7 +234,7 @@ describe("WorkOrderDetailsPage", () => {
 
   it("renders an error when the work order cannot be loaded", async () => {
     vi.mocked(getWorkOrder).mockRejectedValue(
-      new WorkOrderApiError("Unable to load work order (404).", 404),
+      new ApiError("Unable to load work order (404).", 404),
     );
 
     renderDetailsPage();

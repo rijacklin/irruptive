@@ -1,7 +1,8 @@
+import { ApiError } from "./client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UpdateWorkOrderResponse } from "@irruptive/shared";
 
-import { updateWorkOrder, WorkOrderApiError } from "./work-order";
+import { updateWorkOrder } from "./work-order";
 
 const workOrderId = "6efd02fb-37ae-4685-b0c8-d7408afbf3b3";
 
@@ -68,8 +69,8 @@ describe("updateWorkOrder", () => {
     const update = updateWorkOrder(workOrderId, { priority: "critical" });
 
     await expect(update).rejects.toEqual(
-      expect.objectContaining<Partial<WorkOrderApiError>>({
-        name: "WorkOrderApiError",
+      expect.objectContaining<Partial<ApiError>>({
+        name: "ApiError",
         message: "Unable to update work order (422).",
         status: 422,
       }),
