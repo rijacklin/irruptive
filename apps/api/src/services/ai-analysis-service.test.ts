@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AIAnalysis, WorkOrder } from "@irruptive/database";
+import type {
+  AIAnalysis,
+  WorkOrder,
+  WorkOrderRepository,
+} from "@irruptive/database";
 import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
 import type { AIProvider } from "../ai/ai-provider.js";
 import { AIProviderError } from "../ai/ai-provider.js";
 import {
   AIAnalysisService,
   type AIAnalysisStore,
-  type AIAnalysisWorkOrderStore,
 } from "./ai-analysis-service.js";
 
 const requester: AuthorizationActor = {
@@ -43,7 +46,7 @@ const stored: AIAnalysis = {
 };
 
 describe("AIAnalysisService", () => {
-  let workOrders: AIAnalysisWorkOrderStore;
+  let workOrders: Pick<WorkOrderRepository, "findById">;
   let analyses: AIAnalysisStore;
   let provider: AIProvider;
 

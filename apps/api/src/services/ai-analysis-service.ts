@@ -2,6 +2,7 @@ import type {
   AIAnalysis,
   CreateAIAnalysisInput,
   WorkOrder,
+  WorkOrderRepository,
 } from "@irruptive/database";
 import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
 import { canAccessWorkOrder } from "../authorization/work-order-authorization.js";
@@ -20,10 +21,6 @@ import {
   type AIProvider,
   workOrderAnalysisPromptVersion,
 } from "../ai/ai-provider.js";
-
-export interface AIAnalysisWorkOrderStore {
-  findById(id: string): Promise<WorkOrder | null>;
-}
 
 export interface AIAnalysisStore {
   create(input: CreateAIAnalysisInput): Promise<AIAnalysis>;
@@ -50,7 +47,7 @@ export class AIAnalysisService {
    * @param provider - AI provider used to generate analyses, or `null` when AI is not configured.
    */
   constructor(
-    private readonly workOrders: AIAnalysisWorkOrderStore,
+    private readonly workOrders: Pick<WorkOrderRepository, "findById">,
     private readonly analyses: AIAnalysisStore,
     private readonly provider: AIProvider | null,
   ) {}

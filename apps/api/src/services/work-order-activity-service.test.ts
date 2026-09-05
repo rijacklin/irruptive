@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Comment, WorkOrder, WorkOrderEvent } from "@irruptive/database";
+import type {
+  Comment,
+  WorkOrder,
+  WorkOrderEvent,
+  WorkOrderRepository,
+} from "@irruptive/database";
 import {
   WorkOrderActivityService,
   type ActivityCommentStore,
   type ActivityEventStore,
-  type ActivityWorkOrderStore,
 } from "./work-order-activity-service.js";
 
 const workOrderId = "6efd02fb-37ae-4685-b0c8-d7408afbf3b3";
@@ -27,7 +31,7 @@ const workOrder: WorkOrder = {
 };
 
 describe("WorkOrderActivityService", () => {
-  let workOrders: ActivityWorkOrderStore;
+  let workOrders: Pick<WorkOrderRepository, "findById">;
   let comments: ActivityCommentStore;
   let events: ActivityEventStore;
   let service: WorkOrderActivityService;

@@ -2,18 +2,15 @@ import type {
   Comment,
   CreateCommentInput,
   WorkOrder,
+  WorkOrderRepository,
 } from "@irruptive/database";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthorizationActor } from "../authorization/work-order-authorization.js";
-import {
-  CommentService,
-  type CommentStore,
-  type WorkOrderLookup,
-} from "./comment-service.js";
+import { CommentService, type CommentStore } from "./comment-service.js";
 
 describe("CommentService", () => {
   let comments: CommentStore;
-  let workOrders: WorkOrderLookup;
+  let workOrders: Pick<WorkOrderRepository, "findById">;
   let service: CommentService;
 
   const actor: AuthorizationActor = {

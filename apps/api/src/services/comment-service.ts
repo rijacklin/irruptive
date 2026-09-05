@@ -2,6 +2,7 @@ import type {
   Comment,
   CreateCommentInput,
   WorkOrder,
+  WorkOrderRepository,
 } from "@irruptive/database";
 import {
   AuthorizationDeniedError,
@@ -17,14 +18,10 @@ export interface CommentStore {
   listByWorkOrderId(workOrderId: string): Promise<Comment[]>;
 }
 
-export interface WorkOrderLookup {
-  findById(id: string): Promise<WorkOrder | null>;
-}
-
 export class CommentService {
   constructor(
     private readonly comments: CommentStore,
-    private readonly workOrders: WorkOrderLookup,
+    private readonly workOrders: Pick<WorkOrderRepository, "findById">,
   ) {}
 
   /**

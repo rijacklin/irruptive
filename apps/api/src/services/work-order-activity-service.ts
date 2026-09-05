@@ -1,4 +1,8 @@
-import type { Comment, WorkOrder, WorkOrderEvent } from "@irruptive/database";
+import type {
+  Comment,
+  WorkOrderEvent,
+  WorkOrderRepository,
+} from "@irruptive/database";
 import {
   AuthorizationDeniedError,
   WorkOrderNotFoundError,
@@ -12,10 +16,6 @@ export type WorkOrderActivityItem =
   | { kind: "event"; event: WorkOrderEvent }
   | { kind: "comment"; comment: Comment };
 
-export interface ActivityWorkOrderStore {
-  findById(id: string): Promise<WorkOrder | null>;
-}
-
 export interface ActivityCommentStore {
   listByWorkOrderId(workOrderId: string): Promise<Comment[]>;
 }
@@ -26,7 +26,7 @@ export interface ActivityEventStore {
 
 export class WorkOrderActivityService {
   constructor(
-    private readonly workOrders: ActivityWorkOrderStore,
+    private readonly workOrders: Pick<WorkOrderRepository, "findById">,
     private readonly comments: ActivityCommentStore,
     private readonly events: ActivityEventStore,
   ) {}
