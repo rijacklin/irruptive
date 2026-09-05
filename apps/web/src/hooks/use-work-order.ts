@@ -4,7 +4,7 @@ import { getWorkOrder } from "@/api/work-order";
 
 export function useWorkOrder(id: string) {
   return useQuery({
-    queryKey: ["work-orders", id],
+    queryKey: ["work-orders", "detail", id],
     queryFn: ({ signal }) => getWorkOrder(id, signal),
     retry: retryQuery,
   });

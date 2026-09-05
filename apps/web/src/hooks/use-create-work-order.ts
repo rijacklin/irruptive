@@ -10,7 +10,7 @@ export function useCreateWorkOrder() {
     mutationFn: (input: CreateWorkOrderRequest) => createWorkOrder(input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["work-orders"],
+        queryKey: ["work-orders", "list"],
       });
     },
   });

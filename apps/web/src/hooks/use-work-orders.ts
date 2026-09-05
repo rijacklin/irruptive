@@ -3,7 +3,7 @@ import { listWorkOrders, type ListWorkOrdersParams } from "@/api/work-order";
 
 export function useWorkOrders(params: ListWorkOrdersParams) {
   return useQuery({
-    queryKey: ["work-orders", params],
+    queryKey: ["work-orders", "list", params],
     queryFn: ({ signal }) => listWorkOrders(params, signal),
     placeholderData: keepPreviousData,
   });

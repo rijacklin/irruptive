@@ -10,11 +10,10 @@ export function useUpdateWorkOrder(id: string) {
   return useMutation({
     mutationFn: (input: UpdateWorkOrderRequest) => updateWorkOrder(id, input),
     onSuccess: async (response) => {
-      queryClient.setQueryData(["work-orders", id], response);
+      queryClient.setQueryData(["work-orders", "detail", id], response);
 
       await queryClient.invalidateQueries({
-        queryKey: ["work-orders"],
-        predicate: (query) => typeof query.queryKey[1] !== "string",
+        queryKey: ["work-orders", "list"],
       });
 
       await queryClient.invalidateQueries({
