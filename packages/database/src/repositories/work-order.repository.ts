@@ -86,7 +86,7 @@ export class WorkOrderRepository {
   constructor(private readonly pool: Pool) {}
 
   /**
-   * Creates a work order and associtaed event in the database.
+   * Creates a work order and associated event in the database.
    *
    * @param input - The data required to create a work order.
    * @returns The persisted work order.
