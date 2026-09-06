@@ -28,14 +28,13 @@ export interface AIAnalysisStore {
 }
 
 /**
- * Helper method for restricting AI analysis to 'supervisor' and 'admin' roles.
- * NOTE: Technician role can still view stored AI analyses when viewing a work order.
+ * Allows technicians, supervisors, and admins to request AI analysis.
  *
  * @param actor - The authenticated user requesting AI analysis.
  * @returns Whether user has the required role.
  */
 export function canRequestAIAnalysis(actor: AuthorizationActor): boolean {
-  return actor.role === "supervisor" || actor.role === "admin";
+  return ["technician", "supervisor", "admin"].includes(actor.role);
 }
 
 export class AIAnalysisService {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import {
   workOrderPriorities,
   workOrderStatuses,
@@ -68,7 +68,7 @@ export function WorkOrderUpdateForm({
     (canManage && priority !== savedPriority) ||
     (canManage && assignedTo !== savedAssignedTo);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!hasChanges || updateWorkOrderMutation.isPending) {
