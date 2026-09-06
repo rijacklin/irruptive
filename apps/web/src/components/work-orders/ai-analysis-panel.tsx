@@ -17,7 +17,8 @@ interface AIAnalysisPanelProps {
 export function AIAnalysisPanel({ workOrderId, role }: AIAnalysisPanelProps) {
   const analysisQuery = useAIAnalysis(workOrderId);
   const createAnalysis = useCreateAIAnalysis(workOrderId);
-  const canRequest = role === "supervisor" || role === "admin";
+  const canRequest =
+    role === "supervisor" || role === "admin" || role === "technician";
   const analysis = analysisQuery.data?.data;
 
   return (

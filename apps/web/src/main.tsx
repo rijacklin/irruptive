@@ -8,7 +8,12 @@ import "./styles.css";
 
 const queryClient = new QueryClient();
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (rootElement === null) {
+  throw new Error("Missing application mount point in DOM");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>

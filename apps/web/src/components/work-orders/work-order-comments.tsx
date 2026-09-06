@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useComments } from "@/hooks/use-comments";
@@ -18,7 +18,7 @@ export function WorkOrderComments({ workOrderId }: WorkOrderCommentsProps) {
   const createComment = useCreateComment(workOrderId);
   const [body, setBody] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     createComment.mutate(

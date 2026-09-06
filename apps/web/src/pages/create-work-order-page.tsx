@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { workOrderPriorities, type WorkOrderPriority } from "@irruptive/shared";
 
@@ -29,7 +29,7 @@ export function CreateWorkOrderPage() {
   const [priority, setPriority] = useState<WorkOrderPriority>("medium");
   const [category, setCategory] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (createWorkOrderMutation.isPending) {

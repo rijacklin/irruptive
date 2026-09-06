@@ -70,7 +70,7 @@ AI_API_KEY=your-api-key
 AI_TIMEOUT_MS=15000
 ```
 
-Successful analyses are stored as immutable history with provider, model, and prompt version metadata. For cost reasons, AI features are restricted to users with the "admin" or "supervisor" role.
+Successful analyses are stored as separate history records with provider, model, and prompt version metadata.
 
 ```bash
 npm run db:setup
