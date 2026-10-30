@@ -12,6 +12,10 @@
 [node-requirement]: https://img.shields.io/badge/Node.js-22%2B-5FA04E
 [typescript]: https://img.shields.io/badge/TypeScript-5.9-3178C6
 
+<br/>
+
+___________
+
 > AI's sudden entry into the traditional work-order workflow
 
 <img width="2017" height="788" alt="Screenshot 2026-08-17 153715" src="https://github.com/user-attachments/assets/8ad6d0a7-9cd2-41d5-8b27-0572193118f1" />
