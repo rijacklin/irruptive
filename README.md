@@ -1,12 +1,23 @@
 # Irruptive
 
+[![Node.js requirement][node-requirement]](https://nodejs.org/en/download)
+[![TypeScript][typescript]](https://www.typescriptlang.org/)
+
+| Package  | Irruptive                                                                         |
+| -------- | --------------------------------------------------------------------------------- |
+| Source   | https://github.com/rijacklin/irruptive                                            |
+| Stack    | TypeScript, React, Vite, TanStack Query, Express, PostgreSQL, Better Auth, Vitest |
+| Keywords | work orders, AI, structured output, REST, API, authorization                      |
+
+[node-requirement]: https://img.shields.io/badge/Node.js-22%2B-5FA04E
+[typescript]: https://img.shields.io/badge/TypeScript-5.9-3178C6
+
 > AI's sudden entry into the traditional work-order workflow
 
 <img width="2017" height="788" alt="Screenshot 2026-08-17 153715" src="https://github.com/user-attachments/assets/8ad6d0a7-9cd2-41d5-8b27-0572193118f1" />
 &nbsp;
 
-Irruptive is a production-oriented, AI-first, work-order management application.
-&nbsp;
+Irruptive is an AI-first, work-order management application.
 
 <details>
   <summary>Example of generated AI analysis on a work order</summary>
