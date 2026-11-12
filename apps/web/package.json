@@ -17,7 +17,7 @@
     "@irruptive/shared": "^0.1.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.84.2",
-    "better-auth": "^1.6.29",
+    "better-auth": "^1.7.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "react": "^19.1.1",
@@ -38,6 +38,6 @@
     "@vitejs/plugin-react": "^5.0.0",
     "jsdom": "^30.0.1",
     "shadcn": "^4.18.0",
-    "vite": "^7.1.2"
+    "vite": "^7.3.8"
   }
 }
