@@ -29,6 +29,18 @@ Irruptive is an AI-first, work-order management application.
   <img width="1415" height="686" alt="Screenshot 2026-08-17 161129" src="https://github.com/user-attachments/assets/69b186c1-65d2-474d-905f-eefe26c08020" />
 </details>
 
+## Rust rewrite (this branch)
+
+> [!NOTE]
+> The `rust-rewrite` branch is replacing the TypeScript backend with Rust (axum, sqlx, PostgreSQL). The React client stays in TypeScript. On this branch, `.env.example` and `docker-compose.yml` belong to the Rust stack, and the TypeScript backend packages are kept only as reference until cutover. The setup instructions further down still describe the TypeScript app on `main`.
+
+```bash
+cp .env.example .env
+docker compose up -d --wait   # Rust PostgreSQL on localhost:5433
+cargo test --workspace
+cargo run -p irruptive-api    # http://localhost:3000/health
+```
+
 ## Prerequisites
 
 - Node.js 22 or newer

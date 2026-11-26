@@ -1,0 +1,18 @@
+[package]
+name = "irruptive-db"
+description = "PostgreSQL access for Irruptive: connection pool, migrations, and queries."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+irruptive-domain.workspace = true
+sqlx.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+
+[lints]
+workspace = true

@@ -1,3 +1,10 @@
+# Local PostgreSQL for the Rust rewrite.
+#
+# The explicit project name and default host port 5433 keep this database
+# separate from the TypeScript app's (project "irruptive", port 5432), so both
+# can run at the same time from their own worktrees.
+name: irruptive-rust
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -6,7 +13,7 @@ services:
       POSTGRES_USER: irruptive
       POSTGRES_PASSWORD: irruptive
     ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
