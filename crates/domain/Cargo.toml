@@ -1,0 +1,13 @@
+[package]
+name = "irruptive-domain"
+description = "Irruptive domain types and business rules. No I/O and no framework dependencies."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

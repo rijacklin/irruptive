@@ -7,3 +7,6 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 .vscode
+
+# Rust
+/target/
